@@ -58,14 +58,13 @@ policy_2_rules={}
 policy_parl={}
 policy_seq={}
 add_cache={}
-add_array=[]
+#add_array=[]
 compile_debug=False
 compiler_optimize=True
 addCache_optimize=True
 count_classifierAdd=0
 add_redundancyCounter=0
-#rule_parl=[]
-#rule_seq=[]
+
 
 ################################################################################
 # Policy Language                                                              #
@@ -809,10 +808,10 @@ class parallel(CombinatorPolicy):
         """
         if compiler_optimize==True:
             classifier_tmp=[]
-            if compile_debug==True: print "+: Compile called for",self.policies,len(self.policies)
+            if compile_debug==True: print "++: Compile called for",self.policies,len(self.policies)
             for policy1 in self.policies:
                 hash1=policy1.__repr__()
-                if compile_debug==True: print ">>: Analysing Policy: ",policy1
+                if compile_debug==True: print "++: Analysing Policy: ",policy1
                 if hash1 in policy_parl:
                     if compile_debug==True: print "++: Repetition Confirmed: ",policy1
                     out=policy_parl[hash1]
@@ -823,47 +822,18 @@ class parallel(CombinatorPolicy):
                     classifier_tmp.append(out)
                     policy_parl[hash1]=out
                     if compile_debug==True: print "++: Adding Rule: ",len(policy_parl),policy1
-                    
-                
-                """
-                flag=False
-                ind=0
-                print "++: Analysing Policy: ",policy1
-                for policy2 in policy_parl:
-                    flag=compare_policies(policy1,policy2,[])
-                    print "++: Comparison: policy1: ",policy1," policy2: ",policy2,flag
-                    if flag==True:
-                        break
-                    ind+=1
-                if flag==False:                
-                    print "++: Adding/compiling: ",policy1   
-                    out=policy1.compile()
-                    classifier_tmp.append(out)
-                    policy_parl.append(policy1)
-                    print "++: policy added: ",len(policy_parl),policy1
-                    rule_parl.append(out)
-                    print "++: rule added: ",len(rule_parl),out
-                else:
-                    print "++: Repetition Confirmed",ind
-                    out=rule_parl[ind]
-                    classifier_tmp.append(out)
-                """
                  
             if len(self.policies) == 0:  # EMPTY PARALLEL IS A DROP
                 return drop.compile()
             classifiers=classifier_tmp
-            #classifiers = map(lambda p: p.compile(), self.policies)
-            out=reduce(lambda acc, c: acc + c, classifiers)
-            if compile_debug==True: print "++ final out: ",out
-            return out
         else:
             if len(self.policies) == 0:  # EMPTY PARALLEL IS A DROP
                 return drop.compile()
-            #classifiers=classifier_tmp
             classifiers = map(lambda p: p.compile(), self.policies)
-            out=reduce(lambda acc, c: acc + c, classifiers)
-            if compile_debug==True: print "++ final out: ",out
-            return out
+        
+        out=reduce(lambda acc, c: acc + c, classifiers)
+        if compile_debug==True: print "++ final out: ",out
+        return out
             
 
 
@@ -975,51 +945,18 @@ class sequential(CombinatorPolicy):
                     #print "policy dict type: ",type(out),hash1
                     policy_seq[hash1]=out               
                     if compile_debug==True: print ">>: Adding rule: ",out
-                    
-                """
-                flag=False
-                ind=0
-                print ">>: Analysing Policy: ",policy1
-                for policy2 in policy_seq:
-                    
-                    flag=compare_policies(policy1,policy2,[])
-                    print ">>: Comparison: policy1: ",policy1," policy2: ",policy2,flag
-                    #print ">>: Comparison result: ",flag
-                    if flag==True:
-                        break
-                    ind+=1
-                if flag==False:                
-                    #print ">> out: ",out
-                    print ">>: Adding/compiling: ",policy1                                
-                    out=policy1.compile()
-                    classifier_tmp.append(out)
-                    policy_seq.append(policy1)
-                    print ">>: Adding policy: ",len(policy_seq),policy1                
-                    rule_seq.append(out)
-                    print ">>: Adding rule: ",len(rule_seq),out
-                else:
-                    print ">>: Repetition Confirmed",ind
-                    out=rule_seq[ind]
-                    classifier_tmp.append(out)
-                """
-                    
+                
             assert(len(self.policies) > 0)
             classifiers=classifier_tmp
-            #classifiers = map(lambda p: p.compile(),self.policies)
-            for c in classifiers:
-                assert(c is not None)
-            out=reduce(lambda acc, c: acc >> c, classifiers)
-    
-            return out
+            
         else:
             assert(len(self.policies) > 0)
-            #classifiers=classifier_tmp
             classifiers = map(lambda p: p.compile(),self.policies)
-            for c in classifiers:
-                assert(c is not None)
-            out=reduce(lambda acc, c: acc >> c, classifiers)
-    
-            return out
+            
+        for c in classifiers:
+            assert(c is not None)
+        out=reduce(lambda acc, c: acc >> c, classifiers)
+        return out
 
 
 
@@ -1447,6 +1384,34 @@ def copyClassifier(opt):
     tmp=Classifier(tmp_rules)
     return tmp
 
+def addClassifiers(c1,c2):
+    c = Classifier([])
+    for r1 in c1.rules:
+        for r2 in c2.rules:
+            intersection = r1.match.intersect(r2.match)
+            if intersection != drop:
+                # TODO (josh) logic for detecting when sets of actions can't be combined
+                # e.g., [modify(dstip='10.0.0.1'),fwd(1)] + [modify(srcip='10.0.0.2'),fwd(2)]
+                # Arpit: avoided redundant actions
+                
+                if r1.actions==r2.actions:
+                    #print "Similar action", r1.actions
+                    actions=r1.actions
+                else:                        
+                    actions = r1.actions + r2.actions
+                    actions = filter(lambda a: a != drop,actions)
+                    if len(actions) == 0:
+                        actions = [drop]                     
+                    c.rules.append(Rule(intersection, actions))
+    for r1 in c1.rules:
+        if r1 not in c.rules:
+            c.rules.append(r1)
+    for r2 in c2.rules:
+        if r2 not in c.rules:
+            c.rules.append(r2)
+    opt=c.optimize()
+    return opt
+
 def set_addCache(hdict,opt):
     tmp=copyClassifier(opt)
     add_cache[hdict]=tmp
@@ -1493,14 +1458,10 @@ class Classifier(object):
         return not (self == other)
 
     def __add__(self,c2):
-        global add_array
         global count_classifierAdd
         global add_redundancyCounter
         count_classifierAdd+=1        
-        #print count_classifierAdd
-        
-        c1 = self
-        
+        c1 = self        
         if c2 is None:
             return None
         hash1=str(c1.__repr__())
@@ -1508,99 +1469,14 @@ class Classifier(object):
         hdict=str(hash1+", "+hash2)
         if addCache_optimize==True:    
             if hdict not in add_cache:            
-                c = Classifier([])
-                #print "Input: ",c1
-                #print "to add",c2
-                # TODO (cole): make classifiers iterable
-                for r1 in c1.rules:
-                    for r2 in c2.rules:
-                        #print "Rules: ",r1,r2
-                        #if r1.match!=r2.match:
-                        intersection = r1.match.intersect(r2.match)
-                        if intersection != drop:
-                            # TODO (josh) logic for detecting when sets of actions can't be combined
-                            # e.g., [modify(dstip='10.0.0.1'),fwd(1)] + [modify(srcip='10.0.0.2'),fwd(2)]
-                            # Arpit: avoided redundant actions
-                            
-                            if r1.actions==r2.actions:
-                                #print "Similar action", r1.actions
-                                actions=r1.actions
-                            else:                        
-                                actions = r1.actions + r2.actions
-                                #for action in actions:
-                                #    print "action ",action,", type:",type(action), action==drop
-                                #print "before filer",actions
-                                actions = filter(lambda a: a != drop,actions)
-                                #print "after filer",actions
-                                if len(actions) == 0:
-                                    actions = [drop]                     
-                                c.rules.append(Rule(intersection, actions))
-                                #print "intermed: ",c
-        
-                         
-                for r1 in c1.rules:
-                    if r1 not in c.rules:
-                        c.rules.append(r1)
-                for r2 in c2.rules:
-                    if r2 not in c.rules:
-                        c.rules.append(r2)
-                opt=c.optimize()
-                #tmp=copy.deepcopy(opt)
-                #print "tmp", tmp.rules
-                #print "Opt: ",opt
-                set_addCache(hdict,opt)
-                            
+                opt=addClassifiers(c1,c2)
+                set_addCache(hdict,opt)                            
             else:            
                 add_redundancyCounter+=1            
-                #print "Repetition Confirmed",add_redundancyCounter
-                #print "Expected classifier: ",opt.rules,[id(rule) for rule in opt.rules],
-                #print "Retrieved from cache: ",add_cache[hdict].rules,[id(rule) for rule in add_cache[hdict].rules]
                 tmp=get_addCache(hdict)
-                #assert(opt==tmp),"No match"
-                opt=tmp       
-            
+                opt=tmp                   
         else:
-            c = Classifier([])
-            #print "Input: ",c1
-            #print "to add",c2
-            # TODO (cole): make classifiers iterable
-            for r1 in c1.rules:
-                for r2 in c2.rules:
-                    #print "Rules: ",r1,r2
-                    #if r1.match!=r2.match:
-                    intersection = r1.match.intersect(r2.match)
-                    if intersection != drop:
-                        # TODO (josh) logic for detecting when sets of actions can't be combined
-                        # e.g., [modify(dstip='10.0.0.1'),fwd(1)] + [modify(srcip='10.0.0.2'),fwd(2)]
-                        # Arpit: avoided redundant actions
-                        
-                        if r1.actions==r2.actions:
-                            #print "Similar action", r1.actions
-                            actions=r1.actions
-                        else:                        
-                            actions = r1.actions + r2.actions
-                            #for action in actions:
-                            #    print "action ",action,", type:",type(action), action==drop
-                            #print "before filer",actions
-                            actions = filter(lambda a: a != drop,actions)
-                            #print "after filer",actions
-                            if len(actions) == 0:
-                                actions = [drop]                     
-                            c.rules.append(Rule(intersection, actions))
-                            #print "intermed: ",c
-    
-                    
-            for r1 in c1.rules:
-                if r1 not in c.rules:
-                    c.rules.append(r1)
-            for r2 in c2.rules:
-                if r2 not in c.rules:
-                    c.rules.append(r2)
-            opt=c.optimize()
-            #tmp=copy.deepcopy(opt)
-            #print "tmp", tmp.rules
-            #print "Opt: ",opt
-            
+            opt=addClassifiers(c1,c2)            
         return opt
        
 
@@ -1667,11 +1543,11 @@ class Classifier(object):
                     new_a1.map['outport'] = a2.outport
                     new_actions.append(new_a1)
                 else:
-                    print  "Err1",a2,as2
+                    #print  "Err1",a2,as2
                     raise TypeError
             return new_actions
         else:
-            print  "Err2"
+            #print  "Err2"
             raise TypeError
 
     # Returns a classifier.
@@ -1762,67 +1638,3 @@ class Classifier(object):
             if pkts is not None:
                 return pkts
         raise TypeError('Classifier is not total.')
-
-def compare_policies(policy1,policy2,flag=[]):
-    print policy1,policy2
-    if policy1.__repr__()!=policy2.__repr__():
-        return False
-    else:
-        return True
-    
-    #print "Compare called for", policy1,policy2
-    #print flag
-    if isinstance(policy1, parallel):
-        if isinstance(policy2, parallel)and (len(policy1.policies)==len(policy2.policies)):
-            for p1,p2 in zip(policy1.policies,policy2.policies):
-                compare_policies(p1,p2,flag)
-        else:
-            flag.append(False)
-            return False
-            
-    elif isinstance(policy1,sequential):
-        if isinstance(policy2, sequential)and (len(policy1.policies)==len(policy2.policies)):
-            for p1,p2 in zip(policy1.policies,policy2.policies):
-                compare_policies(p1,p2,flag)
-        else:                    
-            flag.append(False)
-            return False
-            
-    elif isinstance(policy1, if_):
-        if isinstance(policy2, if_):
-            compare_policies(policy1.pred,policy2.pred,flag)
-            compare_policies(policy1.t_branch,policy2.t_branch,flag)
-            compare_policies(policy1.f_branch,policy2.f_branch,flag)
-        else:
-            flag.append(False)
-            return False
-    
-    elif isinstance(policy1, fwd):   
-        if isinstance(policy2, fwd):
-            if policy2.outport==policy1.outport:
-                flag.append(True)
-                return True
-        flag.append(False)
-        return False
-    
-    elif isinstance(policy1, modify):   
-        if isinstance(policy2, modify):
-            if policy2.map==policy1.map:
-                flag.append(True)
-                return True
-        flag.append(False)
-        return False
-     
-    elif isinstance(policy1,match):   
-        if policy1==policy2:
-            flag.append(True)
-            return True
-        #print "false flag set for match"
-        flag.append(False) 
-        return False 
-    
-    #print flag
-    if False in flag:
-        return False
-    else:
-        return True
