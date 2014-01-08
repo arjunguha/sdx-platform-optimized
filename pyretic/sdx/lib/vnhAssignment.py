@@ -553,7 +553,7 @@ def post_VNH(policy, sdx, participant_name):
         match_all_inport_var=match_all_inport_var|match(inport=port)
     
     fwdport=extract_all_forward_actions_from_policy(policy)
-    print participant_name,": ",fwdport
+    #print participant_name,": ",fwdport
     for port in fwdport:
         peer=sdx.port_2_participant[int(port)]
         peer=str(peer)

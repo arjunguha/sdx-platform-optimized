@@ -327,7 +327,7 @@ def sdx_parse_policies(policy_file, sdx, participants):
     for participant_name in participants:
         participants[participant_name].policies=post_VNH(participants[participant_name].policies,
                                                          sdx,participant_name)        
-        print "After Post VNH: ",participants[participant_name].policies
+        #print "After Post VNH: ",participants[participant_name].policies
     
     # Compile participant's policies
     compile_Policies(participants)
