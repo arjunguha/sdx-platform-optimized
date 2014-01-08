@@ -37,7 +37,6 @@ import time
 from ipaddr import IPv4Network
 from bitarray import bitarray
 import copy
-import pickle
 
 from pyretic.core import util
 from pyretic.core.network import *
@@ -61,7 +60,7 @@ add_cache={}
 #add_array=[]
 compile_debug=False
 compiler_optimize=True
-addCache_optimize=True
+addCache_optimize=False
 count_classifierAdd=0
 add_redundancyCounter=0
 
