@@ -25,13 +25,23 @@ def main():
     update_paramters(sdx,ntot,nin)
     generate_policies(sdx,participants,ntot,nin)
     aggr_policies=sdx_platform(sdx)
+    print "Policies after composition", aggr_policies
     start_comp=time.time()
     agg_compile=aggr_policies.compile()
+    print  ' Completed Aggregate Compilation ',time.time() - start_comp, "seconds"
+    print "DATA: policy_parl",len(policy_parl)
+    compiler_optimize=True
+    """
+    start_comp=time.time()
+    agg_compile=aggr_policies.compile()
+    print  '(Optimize=True) Completed Aggregate Compilation ',time.time() - start_comp, "seconds"
+    print "DATA: policy_parl",len(policy_parl)
+    """
     #print "Compiled Result: ",agg_compile
     #compiled_parallel=compileParallel(sdx)
-    print  'Completed Aggregate Compilation ',time.time() - start_comp, "seconds"
+    #print  'Completed Aggregate Compilation ',time.time() - start_comp, "seconds"
         
-    print "DATA: policy_parl",len(policy_parl)
+    #print "DATA: policy_parl",len(policy_parl)
     #print "DATA: policy_seq ",policy_seq
     #print "Add called ",count_classifierAdd
     print "DATA: add_cache ", len(add_cache)
