@@ -53,9 +53,11 @@ def compileParallel(sdx):
     print "Aggregate Classifier after optimization: ",aggr_classifier
 
 def main(argv):
-    #print argv
-    #compile_parallel=json.loads(argv[0])
-    #print "input argument",compile_parallel
+    tmp= int(argv[1])
+    if tmp==0:
+        compile_parallel=False
+    else:
+        compile_parallel=True
     
     ntot=2
     nin=1  # number of participants with inbound policies
@@ -76,4 +78,4 @@ def main(argv):
 
 if __name__ == '__main__':
     #cProfile.run('main()', 'restats')
-    main(sys.argv[1:])
+    main(sys.argv)
