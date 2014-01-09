@@ -5,7 +5,8 @@
 #############################################
 
 from common import *
-
+import sys,json
+compile_parallel=False
 
 def compileParallel(sdx):
     rules_dict={}
@@ -20,7 +21,7 @@ def compileParallel(sdx):
         
         
         # print list of forwardports
-        print participant.id_,": ",fwdport
+        #print participant.id_,": ",fwdport
         
         
         # Remove participant's own ports from the fwdport list        
@@ -36,13 +37,13 @@ def compileParallel(sdx):
             # store the resulting classifier's rules in a dictionary
             rules_dict[(participant.id_,peer_id)]=tmp_classifier.rules
             
-    print "Classifier Dict: ",rules_dict
+    #print "Classifier Dict: ",rules_dict
     
     
     # Append all the rules in rules dictionary
     for k,v in rules_dict.iteritems():
         aggr_rules+=v
-    print "aggregate rules: ",aggr_rules
+    #print "aggregate rules: ",aggr_rules
     
     
     # Optimize the classifier from aggregate rules
@@ -51,18 +52,28 @@ def compileParallel(sdx):
     
     print "Aggregate Classifier after optimization: ",aggr_classifier
 
-def main():
-
-    ntot=10
+def main(argv):
+    #print argv
+    #compile_parallel=json.loads(argv[0])
+    #print "input argument",compile_parallel
+    
+    ntot=2
     nin=1  # number of participants with inbound policies
     sdx_participants=generate_sdxglobal(ntot,nin)
     (sdx,participants) = sdx_parse_config('sdx_global.cfg')
     update_paramters(sdx,ntot,nin)
     generate_policies(sdx,participants,ntot,nin)
     start_comp=time.time()
-    compiled_parallel=compileParallel(sdx)
+    if compile_parallel==True:
+        compiled_parallel=compileParallel(sdx)
+    else:
+        aggr_policies=sdx_platform(sdx)
+        print "Aggregate policy after State Machine Composition",aggr_policies
+        agg_compile=aggr_policies.compile()
+        
     print  'Completed Aggregate Compilation ',time.time() - start_comp, "seconds"
 
 
 if __name__ == '__main__':
-    cProfile.run('main()', 'restats')
+    #cProfile.run('main()', 'restats')
+    main(sys.argv[1:])
