@@ -126,6 +126,7 @@ class SDX(object):
         self.port_2_participant=port_2_participant
         self.part_2_prefix_old={}
         self.part_2_prefix_lcs={}
+        self.prefix_2_part={}
         self.lcs_old=[]
         
     def get_participantName(self,ip):
@@ -241,8 +242,7 @@ def sdx_participant_policies(sdx_config,mode):
                     sdx_policy,
                     parallel(
                         [sdx_restrict_state(sdx_config, participant,0) for participant in sdx_config.participants]
-                    )])
-        
+                    )])        
     else:
        sdx_policy=leanStateMachine(sdx_config)
     
@@ -350,8 +350,7 @@ def sdx_parse_policies(policy_file, sdx, participants):
     for participant_name in participants:
         participants[participant_name].policies=post_VNH(participants[participant_name].policies,
                                                          sdx,participant_name)        
-        #print "After Post VNH: ",participants[participant_name].policies
-    
+        #print "After Post VNH: ",participants[participant_name].policies    
     # Compile participant's policies
     compile_Policies(participants)
 

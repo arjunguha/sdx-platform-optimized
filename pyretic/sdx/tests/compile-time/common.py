@@ -77,7 +77,7 @@ def compare_policies(policy1,policy2,flag=[]):
     else:
         return True
 
-def generate_sdxglobal(ntot,nin):
+def generate_sdxglobal(ntot,nin,nports=2):
     sdx_participants={}
     for ind in range(1,ntot+1):
         peers=[]
@@ -89,7 +89,7 @@ def generate_sdxglobal(ntot,nin):
         ip,mac=str(iplist[count]),str(EUI(int(EUI(macinit))+count))
         ports.append({'Id':count,'MAC':mac,'IP':ip})
         if ind<=nin:         
-            for i in range(2):
+            for i in range(nports):
                 count=(ind-1)*2+i+1+ntot
                 ip,mac=str(iplist[count]),str(EUI(int(EUI(macinit))+count))
                 ports.append({'Id':count,'MAC':mac,'IP':ip})                   
