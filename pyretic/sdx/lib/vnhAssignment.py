@@ -104,8 +104,9 @@ def get_prefix(policy, plist, pfxlist, part, pa, acc=[]):
         for pol in policy.policies:
             pfxlist, acc = get_prefix(pol, plist, pfxlist, part, pa, acc) 
     elif isinstance(policy, if_):
-        for pol in policy.policies:
-            pfxlist, acc = get_prefix(pol, plist, pfxlist, part, pa)  
+        pfxlist, acc = get_prefix(policy.pred, plist, pfxlist, part, pa, acc) 
+        pfxlist, acc = get_prefix(policy.t_branch , plist, pfxlist, part, pa, acc)
+        pfxlist, acc = get_prefix(policy.f_branch, plist, pfxlist, part, pa, acc)  
     else:
         if isinstance(policy, match):
             # print policy
@@ -297,8 +298,12 @@ def extract_all_matches_from_policy(policy, acc=[]):
                 p = p & extract_all_matches_from_policy(sub_policy)
         return p
     elif isinstance(policy, if_):
-        raise NotImplementedError("Compilation of if_ policy is currently not supported")
-        sys.exit(-1)
+        p1=extract_all_matches_from_policy(policy.pred)
+        p2=extract_all_matches_from_policy(policy.t_branch)
+        p3=extract_all_matches_from_policy(policy.f_branch)
+        return p1|p2|p3
+        #raise NotImplementedError("Compilation of if_ policy is currently not supported")
+        #sys.exit(-1)
     else:
         # Base call
         if isinstance(policy, fwd):

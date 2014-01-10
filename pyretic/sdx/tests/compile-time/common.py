@@ -140,8 +140,10 @@ def generate_policies(sdx,participants,ntot,nin):
         print participant.id_
         if int(participant.id_)<=nin:
             print "inbound policies"
-            policy=((match(dstport=80) >> sdx.fwd(participant.phys_ports[2]))+
-                    (match(dstport=22) >> sdx.fwd(participant.phys_ports[1]))
+            policy=(if_(match(dstport=80),sdx.fwd(participant.phys_ports[2]),
+                        sdx.fwd(participant.phys_ports[1]))
+                    #+
+                    #(match(dstport=22) >> sdx.fwd(participant.phys_ports[1]))
                    )
         else:
             print "outbound policies"
@@ -153,7 +155,7 @@ def generate_policies(sdx,participants,ntot,nin):
                 print peer
                 policy=(match(dstport=port_init+(peer+1)*10) >> sdx.fwd(participant.peers[peer+1]))+policy
             """
-        #print "output policy: ",policy
+        print "output policy: ",policy
         participant.policies=policy
         participant.original_policies=participant.policies
         participant.policies=pre_VNH(participant.policies,sdx,participant.id_,participant)
