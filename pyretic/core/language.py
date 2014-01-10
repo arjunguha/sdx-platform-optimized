@@ -866,6 +866,43 @@ class union(parallel,Filter):
         else:
             raise TypeError
 
+class disjoint(CombinatorPolicy):
+    """
+    Combinator for several disjoint policies.
+
+    :param policies: the policies to be combined.
+    :type policies: list Policy
+    """
+    def __new__(self, policies=[]):
+        # Hackety hack.
+        if len(policies) == 0:
+            return identity
+        else:
+            rv = super(disjoint, self).__new__(disjoint, policies)
+            rv.__init__(policies)
+            return rv
+
+    def __init__(self, policies=[]):
+        if len(policies) == 0:
+            raise TypeError
+        super(disjoint, self).__init__(policies)
+    
+    def compile(self):
+        """
+        Produce a Classifier for this policy
+
+        :rtype: Classifier
+        """
+        assert(len(self.policies) > 0)
+        aggr_rules=[]
+        print "policies input to Disjoint's compile",self.policies
+        for policy in self.policies:
+            tmp_rules=policy.compile().rules
+            aggr_rules+=tmp_rules[:len(tmp_rules)-1]
+        classifiers = Classifier(aggr_rules).optimize()
+        return classifiers
+        
+        
 
 class sequential(CombinatorPolicy):
     """

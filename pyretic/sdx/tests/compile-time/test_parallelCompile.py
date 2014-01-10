@@ -8,6 +8,40 @@ from common import *
 import sys,json
 compile_parallel=False
 
+def disjointCompose(sdx):
+    disjointPolicies=[]
+    print "disjointCompose called"
+    for participant in sdx.participants:
+
+        print "Participant",participant.id_,participant.policies
+        
+        # get list of all participants to which it forwards
+        fwdport=extract_all_forward_actions_from_policy(participant.policies)
+                
+        # print list of forwardports
+        #print participant.id_,": ",fwdport
+        
+        # Remove participant's own ports from the fwdport list        
+        fwdport=filter(lambda port: port not in sdx.participant_2_port[participant.id_][participant.id_],fwdport)
+        for port in fwdport:
+            peer_id=sdx.port_2_participant[int(port)] # Name of fwding participant
+            peer=sdx.participants_dict[peer_id] # Instance of fwding participant
+                        
+            print "Seq compiling policies of part: ",participant.id_," with peer: ",peer_id
+            match_ports=no_packets
+            for port in sdx.participant_2_port[participant.id_][participant.id_]:
+                 match_ports|=match(inport=port)
+            
+            tmp_policy=match_ports>>participant.policies>>peer.policies
+            disjointPolicies.append(tmp_policy)
+            
+    dPolicy=disjoint(disjointPolicies)
+    print "Compile the disjoint policies"
+    dclassifier=dPolicy.compile()
+    print dclassifier
+    return dclassifier
+    
+
 def compileParallel(sdx):
     rules_dict={}
     aggr_rules=[]
@@ -70,7 +104,8 @@ def main(argv):
     generate_policies(sdx,participants,ntot,nin)
     start_comp=time.time()
     if compile_mode==0:
-        compiled_parallel=compileParallel(sdx)
+        #compiled_parallel=compileParallel(sdx)
+        compiled_disjoint=disjointCompose(sdx)
     
     else:
         aggr_policies=sdx_platform(sdx,compile_mode)
