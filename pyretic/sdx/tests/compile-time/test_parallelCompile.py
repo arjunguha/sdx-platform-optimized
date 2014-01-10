@@ -53,25 +53,25 @@ def compileParallel(sdx):
     print "Aggregate Classifier after optimization: ",aggr_classifier
 
 def main(argv):
-    tmp= int(argv[1])
-    if tmp==0:
-        compile_parallel=False
-    else:
-        compile_parallel=True
+    compile_mode=int(argv[1])
+
     
-    ntot=2
+    ntot=100
     nin=1  # number of participants with inbound policies
     sdx_participants=generate_sdxglobal(ntot,nin)
     (sdx,participants) = sdx_parse_config('sdx_global.cfg')
     update_paramters(sdx,ntot,nin)
     generate_policies(sdx,participants,ntot,nin)
     start_comp=time.time()
-    if compile_parallel==True:
+    if compile_mode==0:
         compiled_parallel=compileParallel(sdx)
+    
     else:
-        aggr_policies=sdx_platform(sdx)
+        aggr_policies=sdx_platform(sdx,compile_mode)
         print "Aggregate policy after State Machine Composition",aggr_policies
         agg_compile=aggr_policies.compile()
+        print agg_compile
+        
         
     print  'Completed Aggregate Compilation ',time.time() - start_comp, "seconds"
 

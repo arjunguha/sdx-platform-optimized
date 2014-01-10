@@ -223,25 +223,43 @@ def sdx_postprocessing(sdx_config):
             fwd(sdx_config.out_var_to_port[output_var].id_)))
     return parallel(postprocessing_policies)
 
-def sdx_participant_policies(sdx_config):
+def sdx_participant_policies(sdx_config,mode):
     '''
         Sequentially compose the || composition of the participants policy k-times where
         k is the number of participants
     '''
-    sdx_policy = passthrough
-    for k in [0,1]:
-    #for k in sdx_config.participants:
-        print k
-        sdx_policy = sequential([
-                sdx_policy,
-                parallel(
-                    [sdx_restrict_state(sdx_config, participant) for participant in sdx_config.participants]
-                )])
-    return sdx_policy
-
-
+    #TODO: make this parametric
+    N=2
+    if mode==1:
+        sdx_policy = passthrough
+        for k in range(N):
+            sdx_policy = sequential([
+                    sdx_policy,
+                    parallel(
+                        [sdx_restrict_state(sdx_config, participant) for participant in sdx_config.participants]
+                    )])
+        
+    else:
+       sdx_policy=leanStateMachine(sdx_config)
     
-def sdx_platform(sdx_config):
+    return sdx_policy
+    
+def leanStateMachine(sdx):
+    sdx_policy=drop
+    for participant in sdx.participants:
+        print "Participant",participant.id_,participant.policies
+        fwdports=extract_all_forward_actions_from_policy(participant.policies) 
+        fwdports=filter(lambda port: port not in sdx.participant_2_port[participant.id_][participant.id_],
+                        fwdports)
+        for port in fwdports:
+            peer_id=sdx.port_2_participant[int(port)] # Name of fwding participant
+            peer=sdx.participants_dict[peer_id] # Instance of fwding participant
+            tmp_policy=participant.policies>>sdx_restrict_state(sdx, peer)
+            sdx_policy+=tmp_policy
+    return sdx_policy
+        
+                
+def sdx_platform(sdx_config,mode):
     '''
         Defines the SDX platform workflow
     '''
@@ -249,7 +267,7 @@ def sdx_platform(sdx_config):
     #print sdx_config.participant_id_to_in_var
     return (
         sdx_preprocessing(sdx_config) >>
-        sdx_participant_policies(sdx_config) >>
+        sdx_participant_policies(sdx_config,mode) >>
         sdx_postprocessing(sdx_config)
     )
  
