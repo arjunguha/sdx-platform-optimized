@@ -30,20 +30,26 @@ def compileParallel(sdx):
             peer_id=sdx.port_2_participant[int(port)] # Name of fwding participant
             peer=sdx.participants_dict[peer_id] # Instance of fwding participant
                         
-            print "Seq compiling policies of part: ",participant.id_," with peer: ",peer_id          
-            tmp_policy=participant.policies>>peer.policies
+            print "Seq compiling policies of part: ",participant.id_," with peer: ",peer_id
+            match_ports=no_packets
+            for port in sdx.participant_2_port[participant.id_][participant.id_]:
+                 match_ports|=match(inport=port)
+            
+            tmp_policy=match_ports>>participant.policies>>peer.policies
+            print "Composed Policies",tmp_policy
             tmp_classifier=tmp_policy.compile()
+            
             
             # store the resulting classifier's rules in a dictionary
             rules_dict[(participant.id_,peer_id)]=tmp_classifier.rules
             
-    #print "Classifier Dict: ",rules_dict
+    print "Rules Dict: ",rules_dict
     
     
     # Append all the rules in rules dictionary
-    for k,v in rules_dict.iteritems():
-        aggr_rules+=v
-    #print "aggregate rules: ",aggr_rules
+    for rules in rules_dict.values():
+        aggr_rules+=rules[0:len(rules)-1]
+    print "aggregate rules: ",aggr_rules
     
     
     # Optimize the classifier from aggregate rules
@@ -56,7 +62,7 @@ def main(argv):
     compile_mode=int(argv[1])
 
     
-    ntot=100
+    ntot=3
     nin=1  # number of participants with inbound policies
     sdx_participants=generate_sdxglobal(ntot,nin)
     (sdx,participants) = sdx_parse_config('sdx_global.cfg')

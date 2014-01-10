@@ -165,7 +165,7 @@ def generate_policies(sdx,participants,ntot,nin):
     
     for participant_name in participants:
         print participant_name
-        participants[participant_name].policies=post_VNH(participants[participant_name].policies,
-                                                         sdx,participant_name)   
+        #participants[participant_name].policies=post_VNH(participants[participant_name].policies,
+        #                                                 sdx,participant_name)   
         #print participants[participant_name].policies    
     compile_Policies(participants)

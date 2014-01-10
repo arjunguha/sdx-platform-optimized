@@ -182,7 +182,7 @@ def sdx_from(vport):
         match_all_physical_port = match_all_physical_port | match(srcmac=phys_port.mac)
     return match_all_physical_port
 
-def sdx_restrict_state(sdx_config, participant):
+def sdx_restrict_state(sdx_config, participant,mode):
     '''
         Check if the state is not an end state (i.e., output port). 
         If so return a passthrough policy otherwise 
@@ -191,14 +191,18 @@ def sdx_restrict_state(sdx_config, participant):
         it cannot match on other participant's flowspace
     '''
     #TODO: make the state machine composition more flexible-- Arpit
-    match_all_output_var = no_packets
-    for output_var in sdx_config.out_var_to_port:
-        match_all_output_var = match_all_output_var | match(state=output_var)
-    return if_(match_all_output_var, 
-               passthrough, 
-               match(state=sdx_config.participant_id_to_in_var[participant.id_]) >> 
-                       participant.policies
-              )
+    if mode==0:
+        match_all_output_var = no_packets
+        for output_var in sdx_config.out_var_to_port:
+            match_all_output_var = match_all_output_var | match(state=output_var)
+        return if_(match_all_output_var, 
+                   passthrough, 
+                   match(state=sdx_config.participant_id_to_in_var[participant.id_]) >> 
+                           participant.policies
+                  )
+    elif mode==1:
+        return (match(state=sdx_config.participant_id_to_in_var[participant.id_]) >> 
+                           participant.policies)
 
 def sdx_preprocessing(sdx_config):
     '''
@@ -236,7 +240,7 @@ def sdx_participant_policies(sdx_config,mode):
             sdx_policy = sequential([
                     sdx_policy,
                     parallel(
-                        [sdx_restrict_state(sdx_config, participant) for participant in sdx_config.participants]
+                        [sdx_restrict_state(sdx_config, participant,0) for participant in sdx_config.participants]
                     )])
         
     else:
@@ -254,7 +258,8 @@ def leanStateMachine(sdx):
         for port in fwdports:
             peer_id=sdx.port_2_participant[int(port)] # Name of fwding participant
             peer=sdx.participants_dict[peer_id] # Instance of fwding participant
-            tmp_policy=participant.policies>>sdx_restrict_state(sdx, peer)
+            tmp_policy=sdx_restrict_state(sdx, participant,1)>>sdx_restrict_state(sdx, peer,0)
+            #tmp_policy=participant.policies>>sdx_restrict_state(sdx, peer,0)
             sdx_policy+=tmp_policy
     return sdx_policy
         
