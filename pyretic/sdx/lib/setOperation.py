@@ -229,8 +229,9 @@ def lcs_recompute(p2p_old, p2p_new,part_2_prefix_updated,lcs_old=[]):
 def decompose_simpler_multi(part_2_prefix,q=None):
     part_2_prefix_updated=part_2_prefix
     pdict=get_pdict(part_2_prefix_updated)
+    #debug=True
     if (debug==True):
-        print "pdict: ",pdict
+        if (debug==True): print "pdict: ",pdict
     for key in pdict:
         if (debug==True):
             print key
@@ -251,7 +252,7 @@ def decompose_simpler_multi(part_2_prefix,q=None):
             decompose_set(tempdict,part_2_prefix_updated,tempdict_bk)
         else:
             if (debug==True):
-                print "avoided" 
+                if (debug==True): print "avoided" 
     lcs=[]
     for part in part_2_prefix_updated:
         for temp in part_2_prefix_updated[part]:
@@ -259,10 +260,10 @@ def decompose_simpler_multi(part_2_prefix,q=None):
             if tset not in lcs:
                 lcs.append(tset)
     if (debug==True):
-        print "LCS: ",lcs    
+        if (debug==True): print "LCS: ",lcs    
     if q!=None:
         q.put((part_2_prefix_updated,lcs))
-        print "Put operation completed", mp.current_process()
+        if (debug==True): print "Put operation completed", mp.current_process()
     else:
         return part_2_prefix_updated,lcs
     
@@ -273,7 +274,7 @@ def decompose_multi(part_2_prefix,q=None,index=0):
     if Np==1:
         Np=8 #dummy value
     
-    print "Started, len: ",P,part_2_prefix.keys()
+    if (debug==True): print "Started, len: ",P,part_2_prefix.keys()
     if P==2:
         ndict={}
         keys=part_2_prefix.keys()
@@ -284,10 +285,10 @@ def decompose_multi(part_2_prefix,q=None,index=0):
         if (debug==True):
             print part_2_prefix
         ndict[nkey]=lcs
-        print "Completed, len: ",P,part_2_prefix.keys()
+        if (debug==True): print "Completed, len: ",P,part_2_prefix.keys()
         if q!=None: 
             q.put(ndict)
-            print "Put operation completed", mp.current_process()
+            if (debug==True): print "Put operation completed", mp.current_process()
         else:      
             return ndict  
     elif P==1:
@@ -296,10 +297,10 @@ def decompose_multi(part_2_prefix,q=None,index=0):
         #print part_2_prefix.keys()[0]
         x,lcs=decompose_simpler_multi(part_2_prefix)
         ndict[part_2_prefix.keys()[0]]=lcs
-        print "Completed, len: ",P,part_2_prefix.keys()
+        if (debug==True): print "Completed, len: ",P,part_2_prefix.keys()
         if q!=None:
             q.put(ndict)
-            print "Put operation completed", mp.current_process()
+            if (debug==True): print "Put operation completed", mp.current_process()
         else:
             return ndict
     else:
@@ -310,84 +311,82 @@ def decompose_multi(part_2_prefix,q=None,index=0):
         qout=[]
         if (debug==True):
             print tmp[0],tmp[1]
-        print "index: ",index
+        if (debug==True): print "index: ",index
         if index>0 and index<=log(Np)/log(2):
             index+=1
             for i in range(2):
                 queue.append(Queue()) 
                 process.append(Process(target=decompose_multi, args=(tmp[i],queue[i],index)))
                 process[i].start()
-                print "Started: ",process[i]
+                if (debug==True): print "Started: ",process[i]
             for i in range(2):
-                print "Waiting for: ",process[i],i
+                if (debug==True): print "Waiting for: ",process[i],i
                 qout.append(queue[i].get())
                 process[i].join()
-                print "Joined: ",process[i],i
+                if (debug==True): print "Joined: ",process[i],i
         else:
-            print "New process not spawned, index: ",index
+            if (debug==True): print "New process not spawned, index: ",index
             for p2p in tmp:
                 qout.append(decompose_multi(p2p))
               
         lcs=decompose_multi(dict(qout[0].items()+qout[1].items()))  
-        print "Completed, len: ",P,part_2_prefix.keys() 
+        if (debug==True): print "Completed, len: ",P,part_2_prefix.keys() 
         if (debug==True):
             print lcs 
         if q!=None:
             q.put(lcs)
-            print "Put operation completed", mp.current_process()
+            if (debug==True): print "Put operation completed", mp.current_process()
         else:    
             return lcs
+
 
     
 def lcs_multiprocess(part_2_prefix):
     lcs=decompose_multi(part_2_prefix,index=1)     
+    #print lcs
     part_2_prefix_updated={}
-
-    Np=mp.cpu_count()
-    if Np==1:
-        Np=8 #dummy value
-    parts=part_2_prefix.keys()
-    for k in range(0,int(ceil(float(len(parts))/Np))):        
-        queue=[]
-        process=[]
-        # TODO: This needs improvements as I need to reduce the number of processes spawned and 
-        # not focus on number of processes running at a time
-        for i in range(0,Np):
-            if k*Np+i>=len(parts):
-                break
-            else:
-                print k,i
-                d1={}
-                part=parts[k*Np+i]
-                d1[part]=part_2_prefix[part]
-                tmp=dict(d1.items()+lcs.items())
-                if (debug==True):
-                    print "d1: ",d1
-                    print "lcs: ",lcs
-                    print "tmp: ",tmp
-                queue.append(Queue())
-                process.append(Process(target=decompose_simpler_multi, args=(tmp,queue[i])))
-                process[i].start()
-                print "Started1: ",process[i]
-        for i in range(0,Np):
-            if k*Np+i>=len(parts):
-                break
-            else:
-                print k,i
-                print "Waiting1 for: ",process[i],i
-                part=parts[k*Np+i]
-                tmp,x=queue[i].get()
-                process[i].join()
-                print "Joined1: ",process[i],i            
-                part_2_prefix_updated[part]=tmp[part]
-
-    if (debug==True):
-        print "Final LCS: ",lcs
-        print "Final P2P: ",part_2_prefix_updated
+    # Todo: Try to parallelize this later
+    for part in part_2_prefix:
+        d1={}
+        d1[part]=part_2_prefix[part]
+        tmp=dict(d1.items())
+        part_2_prefix_updated[part]=reconstruct(tmp,lcs)
     return part_2_prefix_updated,lcs.values()[0]
+        
 
+def get_pdictReconstruct(part_2_prefix):
+    temp=set()
+    for part in part_2_prefix:
+        for plist in part_2_prefix[part]:            
+            temp=temp.union(set(plist))
+            if (debug==True):
+                print "plist: ",plist
+    return dict.fromkeys(list(temp), '')
 
+def reconstruct(part_2_prefix,lcs,q=None):
+    assert(len(part_2_prefix.keys())==1)
+    part=part_2_prefix.keys()[0]
+    part_2_prefix_updated={}
+    part_2_prefix_updated[part]=[]
+    pdict=get_pdictReconstruct(part_2_prefix)
+    #if part==str(1): print "rc ",part, part_2_prefix
+    completed=set()
+    for pfx in pdict:
+        if pfx not in completed:
+            #print 'searching: ',pfx
+            for psets in lcs.values()[0]:
+                #print "analysing: ",psets
+                if pfx in psets:
+                   #if part==str(1): print "found ",pfx,psets
+                   part_2_prefix_updated[part].append(psets)
+                   #print part_2_prefix_updated
+                 
+                   completed =completed.union(psets)
+                   #if part==str(1): print completed
+    
 
+    return part_2_prefix_updated[part]
+    
 
 def test():
     part_2_prefix= {1: [[15, 2, 14, 13, 7, 4], [2, 12, 10, 14, 13, 11], [13, 7, 6, 1, 3, 12]], 
