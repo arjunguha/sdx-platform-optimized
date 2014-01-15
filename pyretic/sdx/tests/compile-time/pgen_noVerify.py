@@ -97,7 +97,6 @@ def setPred(field,val):
         return match(srcip=val)
     elif field=='match_prefixes_set':
         return match_prefixes_set(val)
-    
 
 def getPred(headerFields,fieldValues,nfields):
     nfields=1
@@ -117,9 +116,12 @@ def getDisjointPolicies(pdict):
     v=pdict[k]
     pdict.pop(k,v)
     pred=drop
-    for pol in k.policies:
-        pred|=pol
-    pred.policies=filter(lambda x:x!=drop,pred.policies)
+    if k!=identity:
+        for pol in k.policies:
+            pred|=pol
+        pred.policies=filter(lambda x:x!=drop,pred.policies)
+    else:
+        pred=identity
     t=v    
     f=None
     if len(pdict.keys())>=1:
@@ -132,9 +134,8 @@ def getDisjointPolicies(pdict):
     return if_(pred,t,f)
     
 def generatePolicies(sdx,participants,ntot,nmult,partTypes,frand,nfields,nval,headerFields,fieldValues):
+    
     # Logic for selecting header fields
-
-
     headerFields=random.sample(headerFields,nfields)
     for k in fieldValues:
         fieldValues[k]=random.sample(fieldValues[k],nval)
@@ -142,79 +143,103 @@ def generatePolicies(sdx,participants,ntot,nmult,partTypes,frand,nfields,nval,he
     headerFields.append('match_prefixes_set')
     vals=[]
     for k in sdx.prefixes.keys():
-        print k
+        #print k
         vals.append(set([str(k)]))
     fieldValues['match_prefixes_set']=vals
     print fieldValues
-    
+   
     # Logic to divide the policies for top eyeballs, top content and others
-    n1=int(partTypes[0]*ntot)
-    if n1==0:
-        n1=1
-    n2=int(partTypes[1]*ntot)
-    if n2==0:
-        n2=1
-    n2+=n1
-    n3=n2+5
+    # 1: Tier 1 ISPs (5%) (1->n1)
+    # 2: Tier 2 ISPs (15%) (n+1->n2)
+    # 3: Top Content (5%) (n2+1->n3)
+    # 4: Others (useless fellows) n3+
+    nparts=[]
+    for i in range(len(partTypes)-1):
+        tmp=int(partTypes[i]*ntot)
+        if tmp==0:
+            tmp=1
+        nparts.append(tmp)
+    nparts.append(ntot-sum(nparts))
+    n1=nparts[0]
+    n2=sum(nparts[0:2])
+    n3=sum(nparts[0:3])
+
+    # Logic to equally divide prefix sets announced by each Tier1 ISPs
+    tmp=sdx.prefixes.keys()
+    div=int(float(len(tmp))/nparts[0])
+    pset={}
+    for i in range(nparts[0]-1):
+        k=i*div
+        pset[i+1]=tmp[k:k+div]
+    k=(nparts[0]-1)*div
+    pset[nparts[0]]=tmp[k:]
+    print pset
+    
+    
     nrand=int(frand*ntot)
     if nrand==0:
         nrand=1
-    intensityFactor=2 # more rules for top eyeballs and content providers    
+    intensityFactor=1 # more rules for top eyeballs and content providers    
      
     for participant in sdx.participants:
         policy=drop
-        print 'participant: ',participant.id_,sdx.participant_2_port[participant.id_][participant.id_]
-        match_ports=no_packets
-        for tmp in sdx.participant_2_port[participant.id_][participant.id_]:
-             match_ports|=match(inport=tmp)            
-        match_ports.policies=filter(lambda x:x!=drop,match_ports.policies)
         pdict={}
+
+        print 'participant: ',participant.id_,sdx.participant_2_port[participant.id_][participant.id_]
+        
         if int(participant.id_)<=n1:
             print "policies for Tier1 ISPs"
+            
+            #inbound policies for advertised IP prefix sets
+            #This ensures that all prefix sets have at-least one rule
+            #print pset[int(participant.id_)]
+            for pfxset in pset[int(participant.id_)]:
+                pdict[drop|(match_prefixes_set([pfxset]))]=fwd(random.choice(participant.phys_ports).id_)
+                
             # inbound policies for traffic coming from top content folks            
-            for pid in range(n1+1,n2+1):
+            for pid in range(n2+1,n3+1):
                 pdict[getPred(headerFields,fieldValues,nfields)]=fwd(random.choice(participant.phys_ports).id_)
                         
-            # outbound policies for traffic to randomly selected others 
-            others=random.sample(range(n2+1,n3+1),intensityFactor*nrand) 
-            print others
-            for pid in others:
+                        
+        elif int(participant.id_)>n1 and int(participant.id_)<=n2:
+            print "policies for Tier 2 ISPs"
+            # inbound policies for few top content participants
+            topContent=random.sample(range(n2+1,n3+1),nrand)
+            for pid in topContent:
+                pdict[getPred(headerFields,fieldValues,nfields)]=fwd(random.choice(participant.phys_ports).id_)
+                        
+            # outbound policies for few top eyeballs
+            topEyeballs=random.sample(range(1,n1+1),nrand)
+            for pid in topEyeballs:
                 pdict[getPred(headerFields,fieldValues,nfields)]=fwd(participant.peers[str(pid)].participant.phys_ports[0].id_)
             
-
-        elif int(participant.id_)>n1 and int(participant.id_)<=n2:
+            
+        elif int(participant.id_)>n2 and int(participant.id_)<=n3:
             print "policies for content providers"
-            # outbound policies for top prefix advertisers
-
+            
+            # outbound policies for top eyeballs
             for pid in range(1,n1+1):
                 pdict[getPred(headerFields,fieldValues,nfields)]=fwd(participant.peers[str(pid)].participant.phys_ports[0].id_)
             
-            # inbound policies for randomly selected others 
-            others=random.sample(range(n2+1,n3+1),intensityFactor*nrand) 
-            print others          
-            for pid in others:
-                 pdict[getPred(headerFields,fieldValues,nfields)]=fwd(participant.phys_ports[random.choice(range(len(participant.phys_ports)))].id_)
+            # outbound policies for traffic to randomly selected tier2 
+            tier2=random.sample(range(n1+1,n2+1),intensityFactor*nrand) 
+            for pid in tier2:
+                pdict[getPred(headerFields,fieldValues,nfields)]=fwd(participant.peers[str(pid)].participant.phys_ports[0].id_)
 
+            # inbound policies for randomly selected others 
+            tier2=random.sample(range(n1+1,n2+1),intensityFactor*nrand) 
+            print tier2          
+            for pid in tier2:
+                 pdict[getPred(headerFields,fieldValues,nfields)]=fwd(participant.phys_ports[random.choice(range(len(participant.phys_ports)))].id_)
 
         else:
             print "policies for others"
-            # These non-important members will write policies for important ones 
+            # These non-important members will write default policies
+            pdict[identity]=fwd(participant.phys_ports[random.choice(range(len(participant.phys_ports)))].id_)
             
-            # outbound policies to fraction of top prefix (changed to random others) advertiser
-            peers=participant.peers.keys()
-            others=random.sample(range(n2+1,n3+1),nrand) 
-            print others
-
-            for pid in others:
-                if pid!=int(participant.id_):
-                    pdict[getPred(headerFields,fieldValues,nfields)]=fwd(participant.peers[str(pid)].participant.phys_ports[0].id_)
-
-                
-            # inbound policies for traffic coming from fraction of top content providers and some other members
-            others=random.sample(range(n1+1,n3+1),nrand)             
-            for pid in others:
-                pdict[getPred(headerFields,fieldValues,nfields)]=fwd(participant.phys_ports[random.choice(range(len(participant.phys_ports)))].id_)
-
+            
+        # This is to ensure that participants have no ambiguity in its forwarding action
+        # All rules are iteratively applied with if_ class of rules
         policy=getDisjointPolicies(pdict)
         print policy 
             
@@ -281,7 +306,7 @@ def disjointCompose(sdx):
 
 def main(argv):
     # define the parameters
-    ntot=10 # total number of participants
+    ntot=20 # total number of participants
     fmult=0.2  # fraction of participants with multiple ports
     nmult=int(ntot*fmult)
     nports=2 # number of ports for the participants with multiple ports 
@@ -294,23 +319,25 @@ def main(argv):
     update_paramters(sdx,ntot,nports)
     update_bgp(sdx,advertisers,nprefixes,ntot)
     
-    partTypes=[0.05,0.05,0.9]
+    partTypes=[0.05,0.15,0.05,0.75] 
     frand=0.025
     headerFields=['dstport','srcport','srcip']
     fieldValues={'dstport':range(1,101),'srcport':range(1,101),
                  'srcip':list(IPNetwork('172.0.0.1/26'))}
-    nfields=3
+    nfields=1
     nval=5
     generatePolicies(sdx,participants,ntot,nmult,partTypes,frand,nfields,nval,headerFields,fieldValues)
     
-    vnh_assignment(sdx,participants)
+    #vnh_assignment(sdx,participants)
     
-    compile_Policies(participants)
+    #compile_Policies(participants)
     
-    disjointCompose(sdx)
+    #disjointCompose(sdx)
     
     
         
 if __name__ == '__main__':
     #cProfile.run('main()', 'restats')
+    
+    
     main(sys.argv)
