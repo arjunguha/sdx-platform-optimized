@@ -51,6 +51,7 @@ from ipaddr import IPv4Network
 from netaddr import *
 from multiprocessing import Process, Queue
 import multiprocessing as mp
+debug=False
 ###
 ### SDX classes
 ###
@@ -131,24 +132,24 @@ class SDX(object):
         
     def get_participantName(self,ip):
         pname=''
-        #print self.sdx_ports
-        #print ip
+        #if debug==True: print self.sdx_ports
+        #if debug==True: print ip
         for participant_name in self.sdx_ports:
             for port in self.sdx_ports[participant_name]:
-                #print port.ip
+                #if debug==True: print port.ip
                 if IP(ip)==port.ip:
-                    #print "IP matched"
+                    #if debug==True: print "IP matched"
                     pname=participant_name
                     break
         return pname
     
     def get_neighborList(self,sname):
-        #print type(sname)
+        #if debug==True: print type(sname)
         neighbor_list=[]
         for participant in self.participants:
-            #print participant.peers.keys()
+            #if debug==True: print participant.peers.keys()
             if sname in participant.peers.keys():
-                #print "Neighbor found",participant.id_
+                #if debug==True: print "Neighbor found",participant.id_
                 neighbor_list.append(participant.id_) 
         return neighbor_list
     
@@ -251,7 +252,7 @@ def sdx_participant_policies(sdx_config,mode):
 def leanStateMachine(sdx):
     sdx_policy=drop
     for participant in sdx.participants:
-        print "Participant",participant.id_,participant.policies
+        if debug==True: print "Participant",participant.id_,participant.policies
         fwdports=extract_all_forward_actions_from_policy(participant.policies) 
         fwdports=filter(lambda port: port not in sdx.participant_2_port[participant.id_][participant.id_],
                         fwdports)
@@ -268,8 +269,8 @@ def sdx_platform(sdx_config,mode):
     '''
         Defines the SDX platform workflow
     '''
-    #print sdx_config.out_var_to_port
-    #print sdx_config.participant_id_to_in_var
+    #if debug==True: print sdx_config.out_var_to_port
+    #if debug==True: print sdx_config.participant_id_to_in_var
     return (
         sdx_preprocessing(sdx_config) >>
         sdx_participant_policies(sdx_config,mode) >>
@@ -285,7 +286,7 @@ def sdx_parse_config(config_file):
     sdx = SDX()
     
     sdx_config = json.load(open(config_file, 'r'))
-    #print sdx_config
+    #if debug==True: print sdx_config
     sdx_ports = {}
     sdx_vports = {}
     sdx_participants = {}
@@ -298,7 +299,7 @@ def sdx_parse_config(config_file):
         ''' Adding physical ports '''
         participant = sdx_config[participant_name]
         sdx_ports[participant_name] = [PhysicalPort(id_ = participant["Ports"][i]['Id'], mac = MAC(participant["Ports"][i]["MAC"]),ip=IP(participant["Ports"][i]["IP"])) for i in range(0, len(participant["Ports"]))]     
-        print sdx_ports[participant_name]
+        if debug==True: print sdx_ports[participant_name]
         ''' Adding virtual port '''
         sdx_vports[participant_name] = VirtualPort(participant= participant_name) #Check if we need to add a MAC here
     
@@ -333,24 +334,24 @@ def sdx_parse_policies(policy_file, sdx, participants):
         participant.policies = parallel([
              policy_modules[i].policy(participant, sdx) 
              for i in range(0, len(sdx_policies[participant_name]))])  
-        print "Before pre",participant.policies
+        if debug==True: print "Before pre",participant.policies
         # translate these policies for VNH Assignment
         participant.original_policies=participant.policies
         participant.policies=pre_VNH(participant.policies,sdx,participant_name,participant)
         
-        print "After pre: ",participant.policies
-    #print sdx.out_var_to_port[u'outB_1'].id_  
+        if debug==True: print "After pre: ",participant.policies
+    #if debug==True: print sdx.out_var_to_port[u'outB_1'].id_  
        
     # Virtual Next Hop Assignment
     vnh_assignment(sdx,participants) 
-    print "Completed VNH Assignment"
+    if debug==True: print "Completed VNH Assignment"
     # translate these policies post VNH Assignment
     
     classifier=[]
     for participant_name in participants:
         participants[participant_name].policies=post_VNH(participants[participant_name].policies,
                                                          sdx,participant_name)        
-        #print "After Post VNH: ",participants[participant_name].policies    
+        #if debug==True: print "After Post VNH: ",participants[participant_name].policies    
     # Compile participant's policies
     compile_Policies(participants)
 
@@ -363,7 +364,7 @@ def compile_Policies(participants,doParallel=False):
             Ncpu=8 #dummy value because my VM is single core
         participant_nameList=participants.keys()
         Npart=len(participant_nameList)
-        print "Npart: ",Npart
+        if debug==True: print "Npart: ",Npart
         for k in range(0,int(ceil(float(Npart)/Ncpu))):
             processes=[]
             for i in range(0,Ncpu):
@@ -371,26 +372,26 @@ def compile_Policies(participants,doParallel=False):
                 if ind>=Npart:
                     break
                 else:
-                    print "Participant: ",ind," using core: ",i
+                    if debug==True: print "Participant: ",ind," using core: ",i
                     participant_name=participant_nameList[ind]
                     policy=participants[participant_name].policies
                     processes.append(Process(target=compile_participantPolicies, 
                                              args=(policy,participant_name)))
                     processes[i].start()
-            print processes
+            if debug==True: print processes
             for procs in processes:
                 procs.join()
     else:
         for participant_name in participants:
             compile_participantPolicies(participants[participant_name].policies,participant_name)
             
-    print "Aggregate Compilation Time for each participant independently",time.time() - start_comp, "seconds"             
+    if debug==True: print "Aggregate Compilation Time for each participant independently",time.time() - start_comp, "seconds"             
                     
 
 def compile_participantPolicies(policy,participant_name):
     start_comp=time.time()
-    print len(policy.compile().rules)
-    print participant_name, time.time() - start_comp, "seconds"
+    #if debug==True: print len(policy.compile().rules)
+    if debug==True: print participant_name, time.time() - start_comp, "seconds"
 
 def sdx_update_policies(policy_file,sdx, participants):   
     "Update the VNH Assignment"
@@ -406,7 +407,7 @@ def sdx_update_policies(policy_file,sdx, participants):
         participant.policies = parallel([
              policy_modules[i].policy(participant, sdx) 
              for i in range(0, len(sdx_policies[participant_name]))])  
-        print "Before pre",participant.policies
+        if debug==True: print "Before pre",participant.policies
         # translate these policies for VNH Assignment
         participant.policies=pre_VNH(participant.policies,sdx,participant_name,participant)        
         participant.original_policies=participant.policies
@@ -435,7 +436,7 @@ def sdx_update_route(sdx,route,event_queue):
             if ('ipv4 unicast' in withdraw):
                 prefix_nh_list = withdraw['ipv4 unicast']
     except:
-        print 'BGP update is not an announcement or withdrawal message'
+        if debug==True: print 'BGP update is not an announcement or withdrawal message'
         
     # TODO: populate SDX data structures - MS
     

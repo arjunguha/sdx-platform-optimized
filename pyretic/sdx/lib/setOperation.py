@@ -353,7 +353,7 @@ def lcs_multiprocess(part_2_prefix,verify=True,sdx=None):
         
     else:
         lcs=decompose_multi(part_2_prefix,index=1)     
-    print lcs
+    #print lcs
     part_2_prefix_updated={}
     # Todo: Try to parallelize this later
     for part in part_2_prefix:

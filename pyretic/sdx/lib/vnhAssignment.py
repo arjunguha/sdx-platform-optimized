@@ -48,6 +48,7 @@ from ipaddr import IPv4Network
 from netaddr import *
 
 verify=False
+debug=False
 
 
 def get_policy_name(policy_2_prefix, participant, prefix):  
@@ -77,7 +78,7 @@ def is_Active(policy_in, pnum, participant_name, sdx, prefixes):
         if flag_active == False:
             sdx.policy_2_prefix[participant_name][pname] = plist
             sdx.policy_2_VNH[participant_name][pname] = {}
-    # print sdx.policy_2_prefix
+    # if debug==True: print sdx.policy_2_prefix
     return flag_active
 
 def get_bestPaths(nh_received):
@@ -98,7 +99,7 @@ def get_fwdPeer(peers, ind):
     return ''
     
 def get_prefix(policy, plist, pfxlist, part, pa, acc=[]):
-    #print "n: ",policy
+    #if debug==True: if debug==True: print "n: ",policy
     if isinstance(policy, parallel):
         for pol in policy.policies:
             pfxlist, acc = get_prefix(pol, plist, pfxlist, part, pa)
@@ -112,26 +113,26 @@ def get_prefix(policy, plist, pfxlist, part, pa, acc=[]):
         pfxlist, acc = get_prefix(policy.f_branch, plist, pfxlist, part, pa, acc)  
     else:
         if isinstance(policy, match):
-            # print policy
+            # if debug==True: print policy
             if 'dstip' in policy.map:
                 acc = list(policy.map['dstip'])
         elif isinstance(policy, match_prefixes_set):
-            #print policy
+            #if debug==True: print policy
             # if 'dstip' in policy.map:
             acc = list(policy.pfxes)
-            #print "acc: ",acc
+            #if debug==True: print "acc: ",acc
 
             
         elif isinstance(policy, fwd):
             if verify==True:
                 if len(acc) == 0:
                     peer = get_fwdPeer(plist[part], policy.outport)
-                    #print "plist: ",plist[part]," participant",part," peer: ",peer," outport: ",policy.outport
-                    #print type(peer),type(part)
+                    #if debug==True: print "plist: ",plist[part]," participant",part," peer: ",peer," outport: ",policy.outport
+                    #if debug==True: print type(peer),type(part)
                     if str(peer)!=part:
-                        #print "peer not part"
+                        #if debug==True: print "peer not part"
                         acc = pa['pg1'][peer]
-                        #print peer, acc
+                        #if debug==True: print peer, acc
             if len(acc)>0:
                 pfxlist.append(acc)   
     return pfxlist, acc
@@ -140,12 +141,12 @@ def get_prefix(policy, plist, pfxlist, part, pa, acc=[]):
 def get_part2prefixes(policies, plist, pa):
     p2pfx = {}
     for participant in policies:
-        #print "Analysing participant: ",participant
+        #if debug==True: print "Analysing participant: ",participant
         policy = policies[participant]
         pfxlist = []
         acc = []
         pfxlist, acc = get_prefix(policy, plist, pfxlist, participant, pa)
-        #print participant,policy,pfxlist
+        #if debug==True: print participant,policy,pfxlist
         p2pfx[participant] = pfxlist
     
     return p2pfx
@@ -169,7 +170,7 @@ def get_fwdMap(part_2_VNH):
                     for vnm in part_2_VNH[peer]:
                         if part_2_VNH[peer][vnm] == pfx and vnm != vname:
                             fwd_map[participant][peer][vname] = vnm
-    print "fwd_map: ", fwd_map
+    if debug==True: print "fwd_map: ", fwd_map
     return fwd_map
 
 def get_peerName(port, p_list):
@@ -180,26 +181,26 @@ def get_peerName(port, p_list):
 
 def get_default_forwarding_policy(policy,best_path, participant, participant_list,sdx):
     # for peer in best_path:
-    #print best_path,participant,participant_list
-    #print best_path.keys()
-    print "Considering participant: ",participant
+    #if debug==True: print best_path,participant,participant_list
+    #if debug==True: print best_path.keys()
+    if debug==True: print "Considering participant: ",participant
     fwdport=extract_all_forward_actions_from_policy(policy)
        
     fwdport=filter(lambda port: port not in sdx.participant_2_port[participant][participant],fwdport)
-    print "default forwarding for these peers: ",fwdport
+    if debug==True: print "default forwarding for these peers: ",fwdport
     if len(best_path.keys())!=0:
-        print type(best_path.keys()[0])
+        if debug==True: print type(best_path.keys()[0])
     bestpaths=filter(lambda x: int(x) in fwdport,best_path.keys()) 
-    print bestpaths
+    if debug==True: print bestpaths
     
     policy_ip = parallel([match_prefixes_set(set(best_path[peer])) >> fwd(participant_list[participant][unicode(str(peer))][0]) 
                         for peer in bestpaths]) 
-    # print policy_ip
+    # if debug==True: print policy_ip
     return policy_ip 
 
 def return_vnhop(vnh_2_prefix, VNH_2_mac, pfx):
     vnhop = EthAddr('A1:A1:A1:A1:A1:A1')
-    # print vnh_2_prefix,pfx
+    # if debug==True: print vnh_2_prefix,pfx
     for vname in vnh_2_prefix:
         if pfx in vnh_2_prefix[vname]:
             return VNH_2_mac[vname]
@@ -266,7 +267,7 @@ def step5b_expand_policy_with_vnhop(policy, participant_id, part_2_VNH, VNH_2_ma
         acc = []
         return sequential(map(lambda p: step5b_expand_policy_with_vnhop(p, participant_id, part_2_VNH, VNH_2_mac, acc), policy.policies))
     elif isinstance(policy, if_):
-        #print policy
+        #if debug==True: print policy
         return if_(step5b_expand_policy_with_vnhop(policy.pred, participant_id, part_2_VNH, VNH_2_mac),
                    step5b_expand_policy_with_vnhop(policy.t_branch, participant_id, part_2_VNH, VNH_2_mac),
                    step5b_expand_policy_with_vnhop(policy.f_branch, participant_id, part_2_VNH, VNH_2_mac))
@@ -274,12 +275,12 @@ def step5b_expand_policy_with_vnhop(policy, participant_id, part_2_VNH, VNH_2_ma
         # Base call
         if isinstance(policy, match_prefixes_set):            
             unique_vnhops = set()
-            #print policy.pfxes
+            #if debug==True: print policy.pfxes
             for pfx in policy.pfxes:
-                #print part_2_VNH[participant_id]
+                #if debug==True: print part_2_VNH[participant_id]
                 vnhop = return_vnhop(part_2_VNH[participant_id], VNH_2_mac, pfx)
                 unique_vnhops.add(vnhop)
-            # print unique_vnhops
+            # if debug==True: print unique_vnhops
             acc = list(unique_vnhops)
             match_vnhops = no_packets
             for vnhop in unique_vnhops:
@@ -288,10 +289,10 @@ def step5b_expand_policy_with_vnhop(policy, participant_id, part_2_VNH, VNH_2_ma
             return match_vnhops
         
         elif isinstance(policy, fwd):
-            # print 'acc: ',acc
-            # print 'policy: ',policy
+            # if debug==True: print 'acc: ',acc
+            # if debug==True: print 'policy: ',policy
             if len(list(acc)):
-                print 'a: ', acc
+                if debug==True: print 'a: ', acc
             
         return policy
 
@@ -301,9 +302,9 @@ def step5b(policy, participant, part_2_VNH, VNH_2_mac, best_paths, participant_l
     
     policy_matches = extract_all_matches_from_policy(expanded_vnhop_policy)
     if participant in best_paths:
-        # print 'BIG Match: ',policy_matches
+        # if debug==True: print 'BIG Match: ',policy_matches
         bgp = step5b_expand_policy_with_vnhop(get_default_forwarding_policy(policy,best_paths[participant], participant, participant_list,sdx), participant, part_2_VNH, VNH_2_mac)
-        # print bgp   
+        # if debug==True: print bgp   
         return if_(policy_matches, expanded_vnhop_policy, bgp)
     else:
         return expanded_vnhop_policy
@@ -328,7 +329,7 @@ def extract_all_matches_from_policy(policy, acc=[]):
                 p = p & extract_all_matches_from_policy(sub_policy)
         return p
     elif isinstance(policy, if_):
-        print policy
+        if debug==True: print policy
         p=[extract_all_matches_from_policy(policy.pred),
            extract_all_matches_from_policy(policy.t_branch),
            extract_all_matches_from_policy(policy.f_branch)]
@@ -352,7 +353,7 @@ def step4(lcs,part_2_VNH,VNH_2_pfx,VNH_2_IP,VNH_2_mac,part_2_prefix_updated):
             VNH_2_mac[vname] = MAC(str(EUI(int(EUI(VNH_2_mac['VNH']))+count)))
         VNH_2_pfx[vname] = pset
         for participant in part_2_prefix_updated:
-            #print part_2_prefix_updated
+            #if debug==True: print part_2_prefix_updated
             if pset in part_2_prefix_updated[participant]:
                 if participant not in part_2_VNH:
                     part_2_VNH[participant] = {}
@@ -365,9 +366,9 @@ def step5a_expand_policy_with_prefixes(policy, participant, pa, plist, acc=[]):
     
     # Recursive call
     if isinstance(policy,union):
-        print "Union: ",policy.policies
+        if debug==True: print "Union: ",policy.policies
         p=(map(lambda p: step5a_expand_policy_with_prefixes(p, participant, pa, plist), policy.policies))
-        print p
+        if debug==True: print p
         
         return union(p)
     elif isinstance(policy, parallel):
@@ -376,7 +377,7 @@ def step5a_expand_policy_with_prefixes(policy, participant, pa, plist, acc=[]):
         acc = []
         return sequential(map(lambda p: step5a_expand_policy_with_prefixes(p, participant, pa, plist, acc), policy.policies))
     elif isinstance(policy, if_):
-        print "E: ",isinstance(policy.pred,parallel),step5a_expand_policy_with_prefixes(policy.pred, participant, pa, plist)
+        if debug==True: print "E: ",isinstance(policy.pred,parallel),step5a_expand_policy_with_prefixes(policy.pred, participant, pa, plist)
         return if_(step5a_expand_policy_with_prefixes(policy.pred, participant, pa, plist),
                    step5a_expand_policy_with_prefixes(policy.t_branch, participant, pa, plist),
                    step5a_expand_policy_with_prefixes(policy.f_branch, participant, pa, plist))
@@ -391,7 +392,7 @@ def step5a_expand_policy_with_prefixes(policy, participant, pa, plist, acc=[]):
         elif isinstance(policy, fwd):            
             if verify==True:
                 if 'dstip' not in acc: 
-                    #print type(participant), type(get_fwdPeer(plist[participant], policy.outport))
+                    #if debug==True: print type(participant), type(get_fwdPeer(plist[participant], policy.outport))
                     if participant!= str(get_fwdPeer(plist[participant], policy.outport)):
                         return match_prefixes_set(pa['pg1'][get_fwdPeer(plist[participant], policy.outport)]) >> policy
         return policy
@@ -428,13 +429,13 @@ def vnh_assignment(sdx, participants):
     # 2. Get the participant_2_prefix data structure from participant's policies
 
     best_paths = get_bestPaths(participant_to_ebgp_nh_received)
-    #print 'best_paths: ', best_paths
+    #if debug==True: print 'best_paths: ', best_paths
     # get the participant_2_prefix structure
     # without taking default forwarding policies into consideration
     participant_2_prefix = get_part2prefixes(participants_policies, participant_list, prefixes_announced)
     # Add the prefixes for default forwarding policies now
     for participant in best_paths:
-        #print participant,best_paths[participant]
+        #if debug==True: print participant,best_paths[participant]
         participant_2_prefix[participant] = participant_2_prefix[participant] + best_paths[participant].values()        
     #----------------------------------------------------------------------------------------------------#
     
@@ -444,13 +445,13 @@ def vnh_assignment(sdx, participants):
         sdx.part_2_prefix_old[participant] = tuple(participant_2_prefix[participant])
                         
     # Step 2 & 3
-    print 'Before Set operations: ', participant_2_prefix[unicode(1)]
+    if debug==True: print 'Before Set operations: ', participant_2_prefix[unicode(1)]
     if verify==False:
         part_2_prefix_updated, lcs = lcs_multiprocess(participant_2_prefix,verify,sdx)
         
     else:
         part_2_prefix_updated, lcs = lcs_multiprocess(participant_2_prefix)
-    print 'After Set operations: ',part_2_prefix_updated
+    if debug==True: print 'After Set operations: ',part_2_prefix_updated
     
     sdx.part_2_prefix_lcs = part_2_prefix_updated
     sdx.lcs_old = lcs
@@ -462,11 +463,11 @@ def vnh_assignment(sdx, participants):
     part_2_VNH = {}
     VNH_2_pfx = {}
     step4(lcs,part_2_VNH,VNH_2_pfx,VNH_2_IP,VNH_2_mac,part_2_prefix_updated)
-    print "After new assignment",len(VNH_2_pfx)                    
-    #print part_2_VNH[unicode(1)]
-    #print VNH_2_pfx
-    #print VNH_2_IP
-    #print VNH_2_mac
+    #if debug==True: print "After new assignment",len(VNH_2_pfx)                    
+    #if debug==True: print part_2_VNH[unicode(1)]
+    #if debug==True: print VNH_2_pfx
+    #if debug==True: print VNH_2_IP
+    #if debug==True: print VNH_2_mac
     sdx.part_2_VNH=part_2_VNH
     sdx.VNH_2_IP=VNH_2_IP
     sdx.VNH_2_mac=VNH_2_mac    
@@ -476,25 +477,25 @@ def vnh_assignment(sdx, participants):
     # Step 5
     # Step 5a: Get expanded policies
     for participant in participants_policies:
-        print "PARTICIPANT: ",participant
+        #if debug==True: print "PARTICIPANT: ",participant
         X_policy = participants_policies[participant]
-        print "Original policy:", X_policy
+        #if debug==True: print "Original policy:", X_policy
         
         X_a = step5a(X_policy, participant, prefixes_announced, participant_list)
-        print "Policy after 5a:\n\n", X_a
+        #if debug==True: print "Policy after 5a:\n\n", X_a
         
         X_b = step5b(X_a, participant, part_2_VNH, VNH_2_mac, best_paths, participant_list,sdx)
-        print "Policy after Step 5b:", X_b
+        #if debug==True: print "Policy after Step 5b:", X_b
 
         participants_policies[participant] = X_b
         participants[participant].policies = participants_policies[participant]
-        print "Policy after Step 5:", participants_policies[participant]
+        #if debug==True: print "Policy after Step 5:", participants_policies[participant]
         # classifier=participants_policies[participant].compile()
-        # print "Compilation result",classifier
+        # if debug==True: print "Compilation result",classifier
 
 
 def update_vnh_assignment(sdx, participants):
-    print "Update VNH Assignment Called"
+    if debug==True: print "Update VNH Assignment Called"
     # Initialize the required data structures
     VNH_2_IP, VNH_2_mac, prefixes, participant_list, port_2_participant, peer_group, participant_to_ebgp_nh_received, prefixes_announced, participants_policies = vnh_init(sdx, participants)
     # Step 1:
@@ -502,10 +503,10 @@ def update_vnh_assignment(sdx, participants):
     # 1. Get the best paths data structure
     # 2. Get the participant_2_prefix data structure from participant's policies
     best_paths = get_bestPaths(participant_to_ebgp_nh_received)
-    print 'Updated best_paths: ', best_paths
-    print "prefixes_announced: ", sdx.prefixes_announced
+    if debug==True: print 'Updated best_paths: ', best_paths
+    if debug==True: print "prefixes_announced: ", sdx.prefixes_announced
     participant_2_prefix = get_part2prefixes(participants_policies, participant_list, prefixes_announced)
-    print "p2p: ", participant_2_prefix
+    if debug==True: print "p2p: ", participant_2_prefix
     # Add the prefixes for default forwarding policies now
     for participant in best_paths:
         participant_2_prefix[participant] = participant_2_prefix[participant] + best_paths[participant].values()        
@@ -518,12 +519,12 @@ def update_vnh_assignment(sdx, participants):
     sdx.part_2_prefix_old = tmp_old
     # Step 2 & 3
     #----------------------------------------------------------------------------------------------------#
-    print 'Before Set operations: ', participant_2_prefix
+    if debug==True: print 'Before Set operations: ', participant_2_prefix
     # part_2_prefix_updated=prefix_decompose(participant_2_prefix)
     part_2_prefix_updated,lcs = lcs_recompute(p2p_old, participant_2_prefix, sdx.part_2_prefix_lcs, sdx.lcs_old)
     sdx.part_2_prefix_lcs = part_2_prefix_updated
-    print "TEST: ", sdx.part_2_prefix_old
-    print 'After Set operations: ', part_2_prefix_updated
+    if debug==True: print "TEST: ", sdx.part_2_prefix_old
+    if debug==True: print 'After Set operations: ', part_2_prefix_updated
     sdx.lcs_old = lcs
     
     #----------------------------------------------------------------------------------------------------#
@@ -532,11 +533,11 @@ def update_vnh_assignment(sdx, participants):
     part_2_VNH = {}
     VNH_2_pfx = {}
     step4(lcs,part_2_VNH,VNH_2_pfx,VNH_2_IP,VNH_2_mac,part_2_prefix_updated)
-    print "After new assignment"                    
-    print part_2_VNH
-    print VNH_2_pfx
-    print VNH_2_IP
-    print VNH_2_mac
+    if debug==True: print "After new assignment"                    
+    if debug==True: print part_2_VNH
+    if debug==True: print VNH_2_pfx
+    if debug==True: print VNH_2_IP
+    if debug==True: print VNH_2_mac
     sdx.part_2_VNH=part_2_VNH
     sdx.VNH_2_IP=VNH_2_IP
     sdx.VNH_2_mac=VNH_2_mac  
@@ -546,21 +547,21 @@ def update_vnh_assignment(sdx, participants):
     # Step 5
     # Step 5a: Get expanded policies
     for participant in participants_policies:
-        #print "PARTICIPANT: ",participant
+        #if debug==True: print "PARTICIPANT: ",participant
         X_policy = participants_policies[participant]
-        #print "Original policy:", X_policy
+        #if debug==True: print "Original policy:", X_policy
         
         X_a = step5a(X_policy, participant, prefixes_announced, participant_list,True)
-        #print "Policy after 5a:\n\n", X_a
+        #if debug==True: print "Policy after 5a:\n\n", X_a
         
         X_b = step5b(X_a, participant, part_2_VNH, VNH_2_mac, best_paths, participant_list)
-        #print "Policy after Step 5b:", X_b
+        #if debug==True: print "Policy after Step 5b:", X_b
 
         participants_policies[participant] = X_b
         participants[participant].policies = participants_policies[participant]
-        print "Policy after Step 5:", participants_policies[participant]
+        if debug==True: print "Policy after Step 5:", participants_policies[participant]
         # classifier=participants_policies[participant].compile()
-        # print "Compilation result",classifier
+        # if debug==True: print "Compilation result",classifier
    
     
 def pre_VNH(policy, sdx, participant_name,participant):
@@ -575,20 +576,20 @@ def pre_VNH(policy, sdx, participant_name,participant):
     else:
         # Base call
         if isinstance(policy, modify):            
-            # print policy.map
+            # if debug==True: print policy.map
             if 'state' in policy.map:    
                 # if 'in' in 
                 state = policy.map['state'].encode('ascii', 'ignore')
                 if 'in' in state:
                     peer = state.split('in')[1]
-                    # print peer
+                    # if debug==True: print peer
                     #return fwd(sdx.participant_2_port[participant_name][peer][0])
-                    #print participant.peers
+                    #if debug==True: print participant.peers
                     return fwd(participant.peers[peer].participant.phys_ports[0].id_)
                     
                 else:
                     pn = state.split('out' + participant_name + '_')[1]
-                    #print "pn: ",pn
+                    #if debug==True: print "pn: ",pn
                     return fwd(participant.phys_ports[int(pn)].id_)
                     #return fwd(sdx.participant_2_port[participant_name][participant_name][int(pn)])
                                     
@@ -605,7 +606,7 @@ def post_VNH(policy, sdx, participant_name):
         match_all_inport_var=match_all_inport_var|match(inport=port)
     
     fwdport=extract_all_forward_actions_from_policy(policy)
-    #print participant_name,": ",fwdport
+    #if debug==True: print participant_name,": ",fwdport
     for port in fwdport:
         peer=sdx.port_2_participant[int(port)]
         peer=str(peer)
@@ -618,7 +619,7 @@ def post_VNH(policy, sdx, participant_name):
                 port_2_mac[port]=sdx.sdx_ports[participant_name][i].mac
                 i += 1
                 
-    # print port_2_state
+    # if debug==True: print port_2_state
     # Create the rules to change the state
     # if_(match_all_inport_var,drop,modify(state=port_2_state[port],dstmac=port_2_mac[port]))
     pol = drop
