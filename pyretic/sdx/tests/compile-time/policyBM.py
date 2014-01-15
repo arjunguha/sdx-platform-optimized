@@ -15,6 +15,34 @@ dataPoints=2
 def getKey(ntot,npfx):
     return str(ntot)+","+str(npfx)
 
+def send_email():
+    import smtplib
+
+    gmail_user = "glex.qsd@gmail.com"
+    gmail_pwd = "****"
+    FROM = 'glex.qsd@@gmail.com'
+    TO = ['glex.qsd@gmail.com'] #must be a list
+    SUBJECT = "SDX: Predicate Benchmarking results"
+    TEXT = "Completed Predicate Benchmarking."
+
+    # Prepare actual message
+    message = """\From: %s\nTo: %s\nSubject: %s\n\n%s
+            """ % (FROM, ", ".join(TO), SUBJECT, TEXT)
+        
+    # Try sending the email
+    try:
+        #server = smtplib.SMTP(SERVER) 
+        server = smtplib.SMTP("smtp.gmail.com", 587) #or port 465 doesn't seem to work!
+        server.ehlo()
+        server.starttls()
+        server.login(gmail_user, gmail_pwd)
+        server.sendmail(FROM, TO, message)
+        #server.quit()
+        server.close()
+        print 'successfully sent the mail'
+    except:
+        print "failed to send mail"
+    
 def main(option):
     if option=='predicate':
         data={}
@@ -49,7 +77,8 @@ def main(option):
                     
         with open('predicateBM.dat', 'w') as outfile:
             json.dump(data,outfile,ensure_ascii=True,encoding="ascii")          
-        print data 
+        print data
+        send_email()
         
 if __name__ == '__main__':
     main(sys.argv[1])  
