@@ -306,7 +306,7 @@ def disjointCompose(sdx):
 
 def main(argv):
     # define the parameters
-    ntot=20 # total number of participants
+    ntot=100 # total number of participants
     fmult=0.2  # fraction of participants with multiple ports
     nmult=int(ntot*fmult)
     nports=2 # number of ports for the participants with multiple ports 
