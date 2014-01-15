@@ -36,6 +36,7 @@ def main(option):
                 data['time'][k][nfields]=[]
                 data['space'][k][nfields]=[]
                 for dp in range(dataPoints):
+                    print "iteration: ",dp+1
                     q=Queue()
                     p=Process(target=experiment, args=(ntot,npfx,nfields,q))
                     p.start()
