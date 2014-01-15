@@ -21,6 +21,7 @@ from pyretic.sdx.lib.vnhAssignment import *
 
 iplist=list(IPNetwork('182.0.0.1/16'))
 macinit='A1:A1:00:00:00:00'
+debug=False
 
 def compare_policies(policy1,policy2,flag=[]):
     if isinstance(policy1, parallel):
@@ -68,10 +69,10 @@ def compare_policies(policy1,policy2,flag=[]):
         if policy1==policy2:
             flag.append(True)
             return True
-        #print "false flag set for match"
+        #if debug==True: print "false flag set for match"
         flag.append(False) 
         return False 
-    #print flag
+    #if debug==True: print flag
     if False in flag:
         return False
     else:
@@ -123,10 +124,10 @@ def update_paramters(sdx,ntot,nin):
             port_2_participant[phyport.id_]=participant.id_
         for peer in participant.peers:
             participant_2_port[participant.id_][peer]=[participant.peers[peer].participant.phys_ports[0].id_]
-    print 'participant_2_port: ',participant_2_port
-    print 'port_2_participant: ',port_2_participant
-    print 'prefixes_announced: ',prefixes_announced
-    print 'participant_to_ebgp_nh_received: ',participant_to_ebgp_nh_received
+    if debug==True: print 'participant_2_port: ',participant_2_port
+    if debug==True: print 'port_2_participant: ',port_2_participant
+    if debug==True: print 'prefixes_announced: ',prefixes_announced
+    if debug==True: print 'participant_to_ebgp_nh_received: ',participant_to_ebgp_nh_received
     # Update SDX's data structure
     sdx.participants_dict=participants_dict
     sdx.participant_2_port=participant_2_port
@@ -137,37 +138,37 @@ def update_paramters(sdx,ntot,nin):
 
 def generate_policies(sdx,participants,ntot,nin):
     for participant in sdx.participants:
-        print participant.id_
+        if debug==True: print participant.id_
         if int(participant.id_)<=nin:
-            print "inbound policies"
+            if debug==True: print "inbound policies"
             policy=(if_(match(dstport=80),sdx.fwd(participant.phys_ports[2]),
                         sdx.fwd(participant.phys_ports[1]))
                     #+
                     #(match(dstport=22) >> sdx.fwd(participant.phys_ports[1]))
                    )
         else:
-            print "outbound policies"
+            if debug==True: print "outbound policies"
             port_init=25
             policy=(match(srcport=port_init) >> sdx.fwd(participant.peers['1']))
             
             """
             for peer in range(0,nin-1):
-                print peer
+                if debug==True: print peer
                 policy=(match(dstport=port_init+(peer+1)*10) >> sdx.fwd(participant.peers[peer+1]))+policy
             """
-        print "output policy: ",policy
+        if debug==True: print "output policy: ",policy
         participant.policies=policy
         participant.original_policies=participant.policies
         participant.policies=pre_VNH(participant.policies,sdx,participant.id_,participant)
-        #print "After PreVNH"
-        #print participant.policies
+        #if debug==True: print "After PreVNH"
+        #if debug==True: print participant.policies
     
     vnh_assignment(sdx,participants)
     classifier=[]
     
     for participant_name in participants:
-        print participant_name
+        if debug==True: print participant_name
         #participants[participant_name].policies=post_VNH(participants[participant_name].policies,
         #                                                 sdx,participant_name)   
-        #print participants[participant_name].policies    
+        #if debug==True: print participants[participant_name].policies    
     compile_Policies(participants)

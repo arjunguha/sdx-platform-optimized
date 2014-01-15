@@ -5,6 +5,11 @@
 from common import *
 import sys,json
 verify=False
+debug=False
+
+headerFields=['dstport','srcport','srcip']
+fieldValues={'dstport':range(1,101),'srcport':range(1,101),
+             'srcip':list(IPNetwork('172.0.0.1/26'))}
 
 def getPrefixes(sdx,n):
     pfxes={}
@@ -23,7 +28,7 @@ def update_prefix2part(prefix_2_part,sdx,id):
         prefix_2_part[pfx].append(id)
 
 def update_bgp(sdx,advertisers,nprefixes,ntot):
-    print "Update BGP called"
+    if debug==True: print "Update BGP called"
     getPrefixes(sdx,nprefixes)
     n1,x=advertisers[0]
     n2,x=advertisers[1]
@@ -39,14 +44,13 @@ def update_bgp(sdx,advertisers,nprefixes,ntot):
     if n2==0:
         n2=1
     n2+=n1
-    print n2,n1
     N=len(sdx.prefixes.keys())
     frac=0.0
     prefix_2_part={}
     for participant in sdx.participants:
         if int(participant.id_)<=n1:
             # top advertisement prefixes
-            print "top advertiser",participant.id_
+            if debug==True: print "top advertiser",participant.id_
             x,frac=advertisers[0]
         elif int(participant.id_)>n1 and int(participant.id_)<=n2:
             # middle level advertisers
@@ -59,7 +63,7 @@ def update_bgp(sdx,advertisers,nprefixes,ntot):
             nfrac=1
         sdx.prefixes_announced['pg1'][participant.id_]=getPrefixAnnounced(nfrac,sdx)
         update_prefix2part(prefix_2_part,sdx,participant.id_)
-    print sdx.prefixes_announced
+    if debug==True: print sdx.prefixes_announced
     sdx.prefix_2_part=prefix_2_part
     # Now assign the ebgp nh
     participant_to_ebgp_nh_received={}
@@ -83,9 +87,9 @@ def update_bgp(sdx,advertisers,nprefixes,ntot):
                                     
                 #print "Post bias: ",tmp                   
                 participant_to_ebgp_nh_received[participant.id_][prefix]=random.choice(tmp)
-    print "ebgp updated: ",participant_to_ebgp_nh_received   
+    if debug==True: print "ebgp updated: ",participant_to_ebgp_nh_received   
     best_paths = get_bestPaths(participant_to_ebgp_nh_received)
-    print best_paths
+    if debug==True: print best_paths
     sdx.participant_to_ebgp_nh_received=participant_to_ebgp_nh_received
 
 def setPred(field,val):
@@ -125,7 +129,7 @@ def getDisjointPolicies(pdict):
     t=v    
     f=None
     if len(pdict.keys())>=1:
-        print len(pdict.keys())
+        #print len(pdict.keys())
         f=getDisjointPolicies(pdict)
         #print "f: ",f
     else:
@@ -146,7 +150,7 @@ def generatePolicies(sdx,participants,ntot,nmult,partTypes,frand,nfields,nval,he
         #print k
         vals.append(set([str(k)]))
     fieldValues['match_prefixes_set']=vals
-    print fieldValues
+    if debug==True: print fieldValues
    
     # Logic to divide the policies for top eyeballs, top content and others
     # 1: Tier 1 ISPs (5%) (1->n1)
@@ -173,8 +177,6 @@ def generatePolicies(sdx,participants,ntot,nmult,partTypes,frand,nfields,nval,he
         pset[i+1]=tmp[k:k+div]
     k=(nparts[0]-1)*div
     pset[nparts[0]]=tmp[k:]
-    print pset
-    
     
     nrand=int(frand*ntot)
     if nrand==0:
@@ -185,10 +187,10 @@ def generatePolicies(sdx,participants,ntot,nmult,partTypes,frand,nfields,nval,he
         policy=drop
         pdict={}
 
-        print 'participant: ',participant.id_,sdx.participant_2_port[participant.id_][participant.id_]
+        if debug==True: print 'participant: ',participant.id_,sdx.participant_2_port[participant.id_][participant.id_]
         
         if int(participant.id_)<=n1:
-            print "policies for Tier1 ISPs"
+            if debug==True: print "policies for Tier1 ISPs"
             
             #inbound policies for advertised IP prefix sets
             #This ensures that all prefix sets have at-least one rule
@@ -199,10 +201,10 @@ def generatePolicies(sdx,participants,ntot,nmult,partTypes,frand,nfields,nval,he
             # inbound policies for traffic coming from top content folks            
             for pid in range(n2+1,n3+1):
                 pdict[getPred(headerFields,fieldValues,nfields)]=fwd(random.choice(participant.phys_ports).id_)
-                        
+                       
                         
         elif int(participant.id_)>n1 and int(participant.id_)<=n2:
-            print "policies for Tier 2 ISPs"
+            if debug==True: print "policies for Tier 2 ISPs"
             # inbound policies for few top content participants
             topContent=random.sample(range(n2+1,n3+1),nrand)
             for pid in topContent:
@@ -212,10 +214,10 @@ def generatePolicies(sdx,participants,ntot,nmult,partTypes,frand,nfields,nval,he
             topEyeballs=random.sample(range(1,n1+1),nrand)
             for pid in topEyeballs:
                 pdict[getPred(headerFields,fieldValues,nfields)]=fwd(participant.peers[str(pid)].participant.phys_ports[0].id_)
-            
+           
             
         elif int(participant.id_)>n2 and int(participant.id_)<=n3:
-            print "policies for content providers"
+            if debug==True: print "policies for content providers"
             
             # outbound policies for top eyeballs
             for pid in range(1,n1+1):
@@ -228,12 +230,13 @@ def generatePolicies(sdx,participants,ntot,nmult,partTypes,frand,nfields,nval,he
 
             # inbound policies for randomly selected others 
             tier2=random.sample(range(n1+1,n2+1),intensityFactor*nrand) 
-            print tier2          
+            if debug==True: print tier2          
             for pid in tier2:
                  pdict[getPred(headerFields,fieldValues,nfields)]=fwd(participant.phys_ports[random.choice(range(len(participant.phys_ports)))].id_)
-
+            
+            
         else:
-            print "policies for others"
+            if debug==True: print "policies for others"
             # These non-important members will write default policies
             pdict[identity]=fwd(participant.phys_ports[random.choice(range(len(participant.phys_ports)))].id_)
             
@@ -241,7 +244,7 @@ def generatePolicies(sdx,participants,ntot,nmult,partTypes,frand,nfields,nval,he
         # This is to ensure that participants have no ambiguity in its forwarding action
         # All rules are iteratively applied with if_ class of rules
         policy=getDisjointPolicies(pdict)
-        print policy 
+        if debug==True: print policy 
             
         participant.policies=policy
         participant.original_policies=participant.policies
@@ -250,10 +253,10 @@ def generatePolicies(sdx,participants,ntot,nmult,partTypes,frand,nfields,nval,he
 
 def disjointCompose(sdx):
     disjointPolicies=[]
-    print "disjointCompose called"
+    if debug==True: print "disjointCompose called"
     for participant in sdx.participants:
 
-        print "Participant",participant.id_,participant.policies
+        if debug==True: print "Participant",participant.id_,participant.policies
         
         # get list of all participants to which it forwards
         fwdport=extract_all_forward_actions_from_policy(participant.policies)
@@ -265,12 +268,12 @@ def disjointCompose(sdx):
         fwdport=filter(lambda port: port not in sdx.participant_2_port[participant.id_][participant.id_],fwdport)
         tmp_policy=drop
         pdict={}
-        print participant.policies.compile()       
+        if debug==True: print participant.policies.compile()       
         for port in fwdport:
             peer_id=sdx.port_2_participant[int(port)] # Name of fwding participant
             peer=sdx.participants_dict[peer_id] # Instance of fwding participant
             
-            print "Seq compiling policies of part: ",participant.id_," with peer: ",peer_id
+            if debug==True: print "Seq compiling policies of part: ",participant.id_," with peer: ",peer_id
             match_ports=no_packets
             for tmp in sdx.participant_2_port[participant.id_][participant.id_]:
                  match_ports|=match(inport=tmp)            
@@ -285,54 +288,61 @@ def disjointCompose(sdx):
             
             
         #print tmp_policy
-        print tmp_policy.compile()
+        if debug==True: print tmp_policy.compile()
         disjointPolicies.append(tmp_policy)
             
     dPolicy=disjoint(disjointPolicies)
-    print "Compile the disjoint policies"
+    if debug==True: print "Compile the disjoint policies"
     start_comp=time.time()
     dclassifier=dPolicy.compile()
-    print dclassifier
-    print len(dclassifier)
-    print  'Completed Disjoint Compilation ',time.time() - start_comp, "seconds"
+    if debug==True: print dclassifier
+    nRules=len(dclassifier)
+    if debug==True: print nRules
+    compileTime=time.time() - start_comp
+    if debug==True: print  'Completed Disjoint Compilation ',compileTime, "seconds"
+    return nRules,compileTime
+    """
     start_comp=time.time()
     dclassifier=dPolicy.compile()
     print  'Completed 2nd Disjoint Compilation ',time.time() - start_comp, "seconds"
     return dclassifier 
-    return dclassifier  
+    return dclassifier
+    """  
      
  
             
 
 def main(argv):
     # define the parameters
-    ntot=100 # total number of participants
+    ntot=20 # total number of participants
     fmult=0.2  # fraction of participants with multiple ports
     nmult=int(ntot*fmult)
     nports=2 # number of ports for the participants with multiple ports 
-    nprefixes=50
+    nprefixes=10
     advertisers=[(0.05,1),(0.15,0.20),(0.80,0.01)]
-    sdx_participants=generate_sdxglobal(ntot,nmult,nports)    
-    (sdx,participants) = sdx_parse_config('sdx_global.cfg')
-    print participants
-    #getPrefixes(sdx,nprefixes)
-    update_paramters(sdx,ntot,nports)
-    update_bgp(sdx,advertisers,nprefixes,ntot)
-    
     partTypes=[0.05,0.15,0.05,0.75]
     frand=0.025
-    headerFields=['dstport','srcport','srcip']
-    fieldValues={'dstport':range(1,101),'srcport':range(1,101),
-                 'srcip':list(IPNetwork('172.0.0.1/26'))}
-    nfields=1
+    nfields=3
     nval=5
+    
+    sdx_participants=generate_sdxglobal(ntot,nmult,nports) 
+       
+    (sdx,participants) = sdx_parse_config('sdx_global.cfg')
+    
+    update_paramters(sdx,ntot,nports)
+    
+    update_bgp(sdx,advertisers,nprefixes,ntot)    
+    
     generatePolicies(sdx,participants,ntot,nmult,partTypes,frand,nfields,nval,headerFields,fieldValues)
     
     vnh_assignment(sdx,participants)
     
-    #compile_Policies(participants)
+    compile_Policies(participants)
     
-    #disjointCompose(sdx)
+    nRules,compileTime=disjointCompose(sdx)
+    print nRules,compileTime
+
+
     
     
         
