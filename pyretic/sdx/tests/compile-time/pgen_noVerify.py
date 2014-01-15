@@ -310,7 +310,7 @@ def main(argv):
     fmult=0.2  # fraction of participants with multiple ports
     nmult=int(ntot*fmult)
     nports=2 # number of ports for the participants with multiple ports 
-    nprefixes=5
+    nprefixes=50
     advertisers=[(0.05,1),(0.15,0.20),(0.80,0.01)]
     sdx_participants=generate_sdxglobal(ntot,nmult,nports)    
     (sdx,participants) = sdx_parse_config('sdx_global.cfg')
@@ -319,7 +319,7 @@ def main(argv):
     update_paramters(sdx,ntot,nports)
     update_bgp(sdx,advertisers,nprefixes,ntot)
     
-    partTypes=[0.05,0.15,0.05,0.75] 
+    partTypes=[0.05,0.15,0.05,0.75]
     frand=0.025
     headerFields=['dstport','srcport','srcip']
     fieldValues={'dstport':range(1,101),'srcport':range(1,101),
@@ -328,7 +328,7 @@ def main(argv):
     nval=5
     generatePolicies(sdx,participants,ntot,nmult,partTypes,frand,nfields,nval,headerFields,fieldValues)
     
-    #vnh_assignment(sdx,participants)
+    vnh_assignment(sdx,participants)
     
     #compile_Policies(participants)
     

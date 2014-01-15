@@ -178,12 +178,22 @@ def get_peerName(port, p_list):
             return peer
     return ''
 
-def get_default_forwarding_policy(best_path, participant, participant_list):
+def get_default_forwarding_policy(policy,best_path, participant, participant_list,sdx):
     # for peer in best_path:
     #print best_path,participant,participant_list
     #print best_path.keys()
+    print "Considering participant: ",participant
+    fwdport=extract_all_forward_actions_from_policy(policy)
+       
+    fwdport=filter(lambda port: port not in sdx.participant_2_port[participant][participant],fwdport)
+    print "default forwarding for these peers: ",fwdport
+    if len(best_path.keys())!=0:
+        print type(best_path.keys()[0])
+    bestpaths=filter(lambda x: int(x) in fwdport,best_path.keys()) 
+    print bestpaths
+    
     policy_ip = parallel([match_prefixes_set(set(best_path[peer])) >> fwd(participant_list[participant][unicode(str(peer))][0]) 
-                        for peer in best_path.keys()]) 
+                        for peer in bestpaths]) 
     # print policy_ip
     return policy_ip 
 
@@ -286,13 +296,13 @@ def step5b_expand_policy_with_vnhop(policy, participant_id, part_2_VNH, VNH_2_ma
         return policy
 
 
-def step5b(policy, participant, part_2_VNH, VNH_2_mac, best_paths, participant_list):
+def step5b(policy, participant, part_2_VNH, VNH_2_mac, best_paths, participant_list,sdx):
     expanded_vnhop_policy = step5b_expand_policy_with_vnhop(policy, participant, part_2_VNH, VNH_2_mac)
     
     policy_matches = extract_all_matches_from_policy(expanded_vnhop_policy)
     if participant in best_paths:
         # print 'BIG Match: ',policy_matches
-        bgp = step5b_expand_policy_with_vnhop(get_default_forwarding_policy(best_paths[participant], participant, participant_list), participant, part_2_VNH, VNH_2_mac)
+        bgp = step5b_expand_policy_with_vnhop(get_default_forwarding_policy(policy,best_paths[participant], participant, participant_list,sdx), participant, part_2_VNH, VNH_2_mac)
         # print bgp   
         return if_(policy_matches, expanded_vnhop_policy, bgp)
     else:
@@ -473,7 +483,7 @@ def vnh_assignment(sdx, participants):
         X_a = step5a(X_policy, participant, prefixes_announced, participant_list)
         print "Policy after 5a:\n\n", X_a
         
-        X_b = step5b(X_a, participant, part_2_VNH, VNH_2_mac, best_paths, participant_list)
+        X_b = step5b(X_a, participant, part_2_VNH, VNH_2_mac, best_paths, participant_list,sdx)
         print "Policy after Step 5b:", X_b
 
         participants_policies[participant] = X_b
