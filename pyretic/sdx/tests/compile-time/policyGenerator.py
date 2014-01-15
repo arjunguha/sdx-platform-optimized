@@ -4,6 +4,7 @@
 
 from common import *
 import sys,json
+verify=False
 
 def getPrefixes(sdx,n):
     pfxes={}
@@ -30,6 +31,7 @@ def update_bgp(sdx,advertisers,nprefixes,ntot):
     n2*=ntot
     
     n1=int(n1)
+    n1=1 # limiting top advertiser to 1 (hacky hack)
     if n1==0:
         n1=1
     
@@ -116,10 +118,11 @@ def generatePolicies(sdx,participants,ntot,nmult,partTypes,frand,nfields,nval,he
     n1=int(partTypes[0]*ntot)
     n2=int(partTypes[1]*ntot)
     n2+=n1
+    n3=n2+5
     nrand=int(frand*ntot)
     if nrand==0:
         nrand=1
-    intensityFactor=4 # more rules for top eyeballs and content providers    
+    intensityFactor=2 # more rules for top eyeballs and content providers    
      
     for participant in sdx.participants:
         policy=drop
@@ -133,7 +136,7 @@ def generatePolicies(sdx,participants,ntot,nmult,partTypes,frand,nfields,nval,he
                          fwd(random.choice(participant.phys_ports).id_))
                         
             # outbound policies for traffic to randomly selected others 
-            others=random.sample(range(n2,ntot+1),intensityFactor*nrand) 
+            others=random.sample(range(n2+1,n3+1),intensityFactor*nrand) 
             print others
             for pid in others:
                 policy+=(getPred(headerFields,fieldValues,nfields)
@@ -151,7 +154,7 @@ def generatePolicies(sdx,participants,ntot,nmult,partTypes,frand,nfields,nval,he
                          >>fwd(participant.peers[str(pid)].participant.phys_ports[0].id_))
             
             # inbound policies for randomly selected others 
-            others=random.sample(range(n2+1,ntot+1),intensityFactor*nrand) 
+            others=random.sample(range(n2+1,n3+1),intensityFactor*nrand) 
             print others          
             for pid in others:
                  policy+=(getPred(headerFields,fieldValues,nfields)
@@ -163,17 +166,18 @@ def generatePolicies(sdx,participants,ntot,nmult,partTypes,frand,nfields,nval,he
         else:
             print "policies for others"
             # These non-important members will write policies for important ones 
-            # outbound policies to fraction of top prefix advertiser
+            
+            # outbound policies to fraction of top prefix (changed to random others) advertiser
             peers=participant.peers.keys()
-            others=random.sample(range(1,n1+1),nrand) 
+            others=random.sample(range(n2+1,n3+1),nrand) 
             print others
             for pid in others:
-                policy+=(getPred(headerFields,fieldValues,nfields)
-                         >>fwd(participant.peers[str(pid)].participant.phys_ports[0].id_))
+                if pid!=int(participant.id_):
+                    policy+=(getPred(headerFields,fieldValues,nfields)
+                             >>fwd(participant.peers[str(pid)].participant.phys_ports[0].id_))
                 
-            # inbound policies for traffic coming from fraction of top content providers 
-            others=random.sample(range(n2+1,ntot+1),nrand) 
-            
+            # inbound policies for traffic coming from fraction of top content providers and some other members
+            others=random.sample(range(n1+1,n3+1),nrand)             
             for pid in others:
                 policy+=(getPred(headerFields,fieldValues,nfields)
                          >>fwd(participant.phys_ports[
@@ -191,11 +195,11 @@ def generatePolicies(sdx,participants,ntot,nmult,partTypes,frand,nfields,nval,he
 
 def main(argv):
     # define the parameters
-    ntot=20 # total number of participants
+    ntot=40 # total number of participants
     fmult=0.2  # fraction of participants with multiple ports
     nmult=int(ntot*fmult)
     nports=2 # number of ports for the participants with multiple ports 
-    nprefixes=50
+    nprefixes=40
     advertisers=[(0.05,1),(0.15,0.20),(0.80,0.01)]
     sdx_participants=generate_sdxglobal(ntot,nmult,nports)    
     (sdx,participants) = sdx_parse_config('sdx_global.cfg')

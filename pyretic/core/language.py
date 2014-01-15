@@ -897,7 +897,7 @@ class disjoint(CombinatorPolicy):
         assert(len(self.policies) > 0)
         aggr_rules=[]
         last_rule=None
-        print "policies input to Disjoint's compile",self.policies
+        #print "policies input to Disjoint's compile",self.policies
         for policy in self.policies:
             tmp_rules=policy.compile().rules
             last_rule=[tmp_rules[len(tmp_rules)-1]]

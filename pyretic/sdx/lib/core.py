@@ -389,7 +389,7 @@ def compile_Policies(participants,doParallel=False):
 
 def compile_participantPolicies(policy,participant_name):
     start_comp=time.time()
-    policy.compile()
+    print len(policy.compile().rules)
     print participant_name, time.time() - start_comp, "seconds"
 
 def sdx_update_policies(policy_file,sdx, participants):   
