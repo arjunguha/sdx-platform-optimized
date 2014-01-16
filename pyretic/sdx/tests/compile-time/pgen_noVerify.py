@@ -270,8 +270,7 @@ def lsmCompose(sdx):
     if debug==True: print "lsmCompose called"
     for participant in sdx.participants:
 
-        if debug==True: print "Participant",participant.id_,participant.policies
-        
+        if debug==True: print "Participant",participant.id_,participant.policies        
         # get list of all participants to which it forwards
         fwdport=extract_all_forward_actions_from_policy(participant.policies)
         
@@ -296,8 +295,7 @@ def lsmCompose(sdx):
             match_ports1.policies=filter(lambda x:x!=drop,match_ports1.policies)
             tmp_policy+=(match_ports>>participant.policies>>match_ports1>>peer.policies>>match_ports1)
             
-            
-            
+                        
         #print tmp_policy
         if debug==True: print tmp_policy.compile()
         lsmPolicies.append(tmp_policy)
@@ -348,7 +346,9 @@ def disjointCompose(sdx):
             for tmp in sdx.participant_2_port[peer_id][peer_id]:
                  match_ports1|=match(outport=tmp)            
             match_ports1.policies=filter(lambda x:x!=drop,match_ports1.policies)
+            #print participant.policies,peer.policies
             tmp_policy+=(match_ports>>participant.policies>>match_ports1>>peer.policies>>match_ports1)
+            #print tmp_policy
             
             
             

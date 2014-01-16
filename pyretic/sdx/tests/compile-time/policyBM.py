@@ -11,7 +11,7 @@ import os,json,sys
 import subprocess
 from multiprocessing import Process, Queue
 
-dataPoints=2
+dataPoints=4
 
 def getKey(ntot,npfx):
     return str(ntot)+","+str(npfx)
@@ -90,12 +90,11 @@ def main(option):
         #modes=['dlsm','lsm','naive']
         #nparts=[20,40,80,160]
         modes=['dlsm','lsm','naive']
-        nparts=[20,40,80]
+        nparts=[20,40,80,160]
         
-        npfx=50
-        nfields=1
-        # header fields
-        nheaders=range(4)
+        npfx=10
+        nfields=0
+
         #data['partpfx']=partpfx
         data['modes']=modes
         data['nfields']=nfields

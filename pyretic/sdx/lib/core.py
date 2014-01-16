@@ -82,7 +82,7 @@ participant_to_ebgp_nh_received = {
     }
 
 peer_groups={'pg1':[1,2,3,4]}
-VNH_2_IP={'VNH':list(IPNetwork('172.0.0.1/24'))}
+VNH_2_IP={'VNH':list(IPNetwork('172.0.0.1/23'))}
 VNH_2_mac={'VNH':'AA:00:00:00:00:00'}
 #VNH_2_IP={'VNHB':'172.0.0.126','VNHC':'172.0.0.151','VNHA':'172.0.0.101','VNHD':'172.0.0.176'}
 #VNH_2_mac={'VNHA':'A1:A1:A1:A1:A1:00','VNHC':'C1:C1:C1:C1:C1:00','VNHB':'B1:B1:B1:B1:B1:00',

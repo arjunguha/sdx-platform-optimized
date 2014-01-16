@@ -808,7 +808,9 @@ class parallel(CombinatorPolicy):
         if compiler_optimize==True:
             classifier_tmp=[]
             if compile_debug==True: print "++: Compile called for",self.policies,len(self.policies)
+            #print self.policies
             for policy1 in self.policies:
+                #print policy1
                 hash1=policy1.__repr__()
                 if compile_debug==True: print "++: Analysing Policy: ",policy1
                 if hash1 in policy_parl:

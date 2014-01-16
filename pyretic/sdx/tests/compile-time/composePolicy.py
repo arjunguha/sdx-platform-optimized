@@ -13,7 +13,7 @@ from multiprocessing import Process, Queue
 def composeExperiment(mode,ntot,nprefixes,nfields,q=None):
     print "Starting the experiment with parameters: ",mode,ntot,nprefixes,nfields,len(policy_parl)
     print '...'
-
+    start=time.time()
     # Initialize the parameters
     fmult=0.2  # fraction of participants with multiple ports
     nmult=int(ntot*fmult)
@@ -36,7 +36,8 @@ def composeExperiment(mode,ntot,nprefixes,nfields,q=None):
     vnh_assignment(sdx,participants)
     
     compile_Policies(participants)
-    
+    print "Starting policy composition",time.time()-start
+    #print participants[unicode(1)].policies
     if mode=='dlsm':
         nRules,compileTime=disjointCompose(sdx)
     elif mode=='lsm':
