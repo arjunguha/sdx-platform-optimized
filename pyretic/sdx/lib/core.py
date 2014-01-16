@@ -236,6 +236,7 @@ def sdx_participant_policies(sdx_config,mode):
     '''
     #TODO: make this parametric
     N=2
+    # naive state machine composition
     if mode==1:
         sdx_policy = passthrough
         for k in range(N):
@@ -244,6 +245,7 @@ def sdx_participant_policies(sdx_config,mode):
                     parallel(
                         [sdx_restrict_state(sdx_config, participant,0) for participant in sdx_config.participants]
                     )])        
+     # LSM composition
     else:
        sdx_policy=leanStateMachine(sdx_config)
     

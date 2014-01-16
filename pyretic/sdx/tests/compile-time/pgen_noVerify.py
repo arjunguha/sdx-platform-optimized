@@ -248,6 +248,71 @@ def generatePolicies(sdx,participants,ntot,nmult,partTypes,frand,nfields,nval,he
             
         participant.policies=policy
         participant.original_policies=participant.policies
+
+
+def naiveCompose(sdx):
+    if debug==True: print "naiveCompose called"
+    compile_mode=1
+    nPolicy=sdx_platform(sdx,compile_mode)
+
+    if debug==True: print "Compile the naive policies"
+    start_comp=time.time()
+    nclassifier=nPolicy.compile()
+    if debug==True: print nclassifier
+    nRules=len(nclassifier)
+    if debug==True: print nRules
+    compileTime=time.time() - start_comp
+    if debug==True: print  'Completed naive Compilation ',compileTime, "seconds"
+    return nRules,compileTime
+
+def lsmCompose(sdx):
+    lsmPolicies=[]
+    if debug==True: print "lsmCompose called"
+    for participant in sdx.participants:
+
+        if debug==True: print "Participant",participant.id_,participant.policies
+        
+        # get list of all participants to which it forwards
+        fwdport=extract_all_forward_actions_from_policy(participant.policies)
+        
+        # Remove participant's own ports from the fwdport list        
+        fwdport=filter(lambda port: port not in sdx.participant_2_port[participant.id_][participant.id_],fwdport)
+        tmp_policy=drop
+        pdict={}
+        if debug==True: print participant.policies.compile()       
+        for port in fwdport:
+            peer_id=sdx.port_2_participant[int(port)] # Name of fwding participant
+            peer=sdx.participants_dict[peer_id] # Instance of fwding participant
+            
+            if debug==True: print "Seq compiling policies of part: ",participant.id_," with peer: ",peer_id
+            match_ports=no_packets
+            for tmp in sdx.participant_2_port[participant.id_][participant.id_]:
+                 match_ports|=match(inport=tmp)            
+            match_ports.policies=filter(lambda x:x!=drop,match_ports.policies)
+            
+            match_ports1=no_packets
+            for tmp in sdx.participant_2_port[peer_id][peer_id]:
+                 match_ports1|=match(outport=tmp)            
+            match_ports1.policies=filter(lambda x:x!=drop,match_ports1.policies)
+            tmp_policy+=(match_ports>>participant.policies>>match_ports1>>peer.policies>>match_ports1)
+            
+            
+            
+        #print tmp_policy
+        if debug==True: print tmp_policy.compile()
+        lsmPolicies.append(tmp_policy)
+            
+    lPolicy=parallel(lsmPolicies)
+    if debug==True: print "Compile the lsm policies"
+    start_comp=time.time()
+    lclassifier=lPolicy.compile()
+    if debug==True: print lclassifier
+    nRules=len(lclassifier)
+    if debug==True: print nRules
+    compileTime=time.time() - start_comp
+    if debug==True: print  'Completed lsm Compilation ',compileTime, "seconds"
+    return nRules,compileTime
+
     
     
 
@@ -301,13 +366,7 @@ def disjointCompose(sdx):
     compileTime=time.time() - start_comp
     if debug==True: print  'Completed Disjoint Compilation ',compileTime, "seconds"
     return nRules,compileTime
-    """
-    start_comp=time.time()
-    dclassifier=dPolicy.compile()
-    print  'Completed 2nd Disjoint Compilation ',time.time() - start_comp, "seconds"
-    return dclassifier 
-    return dclassifier
-    """  
+
      
  
             
