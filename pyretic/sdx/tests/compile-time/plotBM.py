@@ -20,17 +20,29 @@ def main(option):
     dname=option+"BM.dat"
     if option=='compose':
         print "plotting "+str(option)+" result"
+        dname="composeBM_matapan.dat"
         data=json.load(open(dname, 'r'))
         params=['space','time']
+        xlab=[]
         for param in params:
             print "plotting for the param: ",param
             for k,v in data[param].iteritems():
                 print k
                 tmp_median=[]
                 tmp_stddev=[]
+                print v.keys()
+                tmp={}
                 for hdr in v:
+                    tmp[int(hdr)]=v[hdr]
+                v=tmp              
+                v.keys().sort()
+                xlab=v.keys()
+                print v.keys()
+                for hdr in sorted(v.iterkeys()):
+                    print hdr,v[hdr]
                     total, average, median, standard_deviation, minimum, maximum, confidence=stats(v[hdr])
                     print median,standard_deviation
+                    median=average
                     tmp_median.append(median)
                     tmp_stddev.append(standard_deviation)
                 print "median: ",tmp_median
@@ -40,6 +52,7 @@ def main(option):
             fig = plt.figure(figsize=(12,12))
             ax = fig.add_subplot(1,1,1)
             color_n=['g','m','c','r','b','k','w']
+            markers=['^','o','H','*']
             p1=[]
             i=0
             leg=[]
@@ -47,10 +60,15 @@ def main(option):
             for k in data[param].keys():
                 leg.append(k)
                 a=data[param][k]['median']
+                v=data[param][k]
                 err=data[param][k]['stddev']
                 p1.append([])
-                p1[i]=pl.errorbar(range(1,len(a)+1),a,yerr=err,markerfacecolor=color_n[i],
-                              marker='o',label=k,linewidth=5.0)
+                print sorted(v.iterkeys())
+                xlab.sort()
+                print "xlab: ",xlab
+                p1[i]=pl.errorbar(xlab,a,yerr=err,markerfacecolor=color_n[i],
+                              color='k', markersize=20,ecolor='k',marker=markers[i],
+                              label=k,linewidth=4.0)
                 i+=1
             p=[]
             i=0
@@ -63,16 +81,17 @@ def main(option):
             for tick in ax.yaxis.get_major_ticks():
                 tick.label.set_fontsize(24)
                 
-            pl.legend((p),leg,'lower right',prop={'size':32})
-            pl.xlabel('# Header Fields',fontsize=32)
+            pl.legend((p),leg,'upper left',prop={'size':32})
+            pl.xlabel('# Participants',fontsize=32)
             if param=='space':
                 pl.ylabel('# Flow Rules',fontsize=32)
             elif param=='time':
                 pl.ylabel('Compilation Time (seconds)',fontsize=32)
+                pl.xlim(15,165)
+                pl.ylim(-10,500)
                 
             ax.grid(True)
-            #pl.xlim(0.1,0.1)
-            #pl.ylim((0.1,ax.get_ylim()))
+            
             plot_name=option+'_'+param+'.eps'
             plot_name_png=option+'_'+param+'.png'
             pl.savefig(plot_name)

@@ -89,7 +89,7 @@ def main(option):
 
         #modes=['dlsm','lsm','naive']
         #nparts=[20,40,80,160]
-        modes=['dlsm','lsm','naive']
+        modes=['dlsm','lsm']
         nparts=[20,40,80,160]
         
         npfx=10
@@ -119,6 +119,46 @@ def main(option):
                     #nRules,compileTime=experiment(ntot,npfx,nfields)
                     data['time'][k][ntot].append(compileTime)
                     data['space'][k][ntot].append(nRules)
+                    
+        with open(dname, 'w') as outfile:
+            json.dump(data,outfile,ensure_ascii=True,encoding="ascii")          
+        print data
+    elif option=='pgroup':
+        data={}
+        print 'Running Prefix group Experiment'
+
+        #modes=['dlsm','lsm','naive']
+        #nparts=[20,40,80,160]
+        #modes=['dlsm','lsm']
+        nparts=[50,100,150,200]
+        npfxes=[20,40,60,80,100]
+        #npfx=10
+        nfields=0
+        mode='dlsm'
+        #data['partpfx']=partpfx
+        data['npfxes']=npfxes
+        data['nfields']=nfields
+        data['modes']=mode
+        data['time']={}
+        data['space']={}        
+        for ntot in nparts:
+            k=ntot
+            data['time'][k]={}
+            data['space'][k]={}
+            for npfx in npfxes:                
+                data['time'][k][npfx]=[]
+                data['space'][k][npfx]=[]
+                for dp in range(dataPoints):
+                    print "iteration: ",dp+1
+                    q=Queue()
+                    p=Process(target=composeExperiment, args=(mode,ntot,npfx,nfields,q))
+                    p.start()
+                    qout=q.get()
+                    p.join()
+                    nRules,compileTime=qout
+                    #nRules,compileTime=experiment(ntot,npfx,nfields)
+                    data['time'][k][npfx].append(compileTime)
+                    data['space'][k][npfx].append(nRules)
                     
         with open(dname, 'w') as outfile:
             json.dump(data,outfile,ensure_ascii=True,encoding="ascii")          
