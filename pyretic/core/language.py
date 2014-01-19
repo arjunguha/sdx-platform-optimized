@@ -56,6 +56,7 @@ content_headers = [ "raw", "header_len", "payload_len"]
 policy_2_rules={}
 policy_parl={}
 policy_seq={}
+disjoint_cache={}
 add_cache={}
 #add_array=[]
 compile_debug=False
@@ -63,6 +64,7 @@ compiler_optimize=True
 addCache_optimize=False
 count_classifierAdd=0
 add_redundancyCounter=0
+hash_time=0
 
 
 ################################################################################
@@ -805,13 +807,17 @@ class parallel(CombinatorPolicy):
 
         :rtype: Classifier
         """
+        global hash_time
         if compiler_optimize==True:
             classifier_tmp=[]
             if compile_debug==True: print "++: Compile called for",self.policies,len(self.policies)
             #print self.policies
             for policy1 in self.policies:
                 #print policy1
+                start=time.time()
                 hash1=policy1.__repr__()
+                hash_time+=time.time()-start
+                if compile_debug==True: print "++ hash time: ",hash_time
                 if compile_debug==True: print "++: Analysing Policy: ",policy1
                 if hash1 in policy_parl:
                     if compile_debug==True: print "++: Repetition Confirmed: ",policy1
@@ -876,7 +882,7 @@ class disjoint(CombinatorPolicy):
     :param policies: the policies to be combined.
     :type policies: list Policy
     """
-    def __new__(self, policies=[]):
+    def __new__(self, policies=[],lower=[]):
         # Hackety hack.
         if len(policies) == 0:
             return identity
@@ -885,7 +891,8 @@ class disjoint(CombinatorPolicy):
             rv.__init__(policies)
             return rv
 
-    def __init__(self, policies=[]):
+    def __init__(self, policies=[],lower=[]):
+        self.lower=lower
         if len(policies) == 0:
             raise TypeError
         super(disjoint, self).__init__(policies)
@@ -896,17 +903,54 @@ class disjoint(CombinatorPolicy):
 
         :rtype: Classifier
         """
+        #print "lower policies: ",self.lower
+        global hash_time
+        hash_time=0
         assert(len(self.policies) > 0)
         aggr_rules=[]
+        inbound_rules=[]
         last_rule=None
         #print "policies input to Disjoint's compile",self.policies
         for policy in self.policies:
-            tmp_rules=policy.compile().rules
+            start=time.time()
+            tmp_rules=None
+            if compiler_optimize==True:
+                hash1=policy.__repr__()
+                if hash1 in disjoint_cache:
+                    tmp_rules=disjoint_cache[hash1]
+                else:
+                    tmp_rules=policy.compile().rules
+                    disjoint_cache[hash1]=tmp_rules                    
+                
+            else:
+                tmp_rules=policy.compile().rules
+                                    
             last_rule=[tmp_rules[len(tmp_rules)-1]]
             aggr_rules+=tmp_rules[:len(tmp_rules)-1]
+                
+            if compile_debug==True: print "time to extract result from cache: ",time.time()-start,policy
+        
+        for policy in self.lower:
+            tmp_rules=None
+            if compiler_optimize==True:
+                hash1=policy.__repr__()
+                if hash1 in disjoint_cache:
+                    tmp_rules=disjoint_cache[hash1]
+                else:
+                    tmp_rules=policy.compile().rules
+                    disjoint_cache[hash1]=tmp_rules
+            else:
+                tmp_rules=policy.compile().rules
             
+            last_rule=[tmp_rules[len(tmp_rules)-1]]
+            inbound_rules+=tmp_rules[:len(tmp_rules)-1]
+               
+        aggr_rules+=inbound_rules   
         aggr_rules+=last_rule
-        classifiers = Classifier(aggr_rules).optimize()
+        start=time.time()
+        #classifiers = Classifier(aggr_rules).optimize()
+        classifiers=aggr_rules
+        if compile_debug==True: print "time to optimize the results: ",time.time()-start
         return classifiers
         
         
@@ -970,11 +1014,15 @@ class sequential(CombinatorPolicy):
 
         :rtype: Classifier
         """
+        global hash_time
         if compiler_optimize==True:
             classifier_tmp=[]
             if compile_debug==True: print ">>: Compile called for",self.policies,len(self.policies)
             for policy1 in self.policies:
+                start=time.time()
                 hash1=policy1.__repr__()
+                hash_time+=time.time()-start
+                if compile_debug==True: print ">> hash time: ",hash_time
                 if compile_debug==True: print ">>: Analysing Policy: ",policy1
                 if hash1 in policy_seq:
                     if compile_debug==True: print ">>: Repetition Confirmed: ",policy1

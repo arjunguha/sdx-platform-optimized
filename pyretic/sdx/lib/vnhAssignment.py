@@ -183,18 +183,42 @@ def get_default_forwarding_policy(policy,best_path, participant, participant_lis
     # for peer in best_path:
     #if debug==True: print best_path,participant,participant_list
     #if debug==True: print best_path.keys()
+    
+    inboundPorts=filter(lambda x: len(sdx.inbound[x])>0,sdx.inbound.keys())
+    #print "inbound ports: ",inboundPorts
+    
     if debug==True: print "Considering participant: ",participant
-    fwdport=extract_all_forward_actions_from_policy(policy)
-       
+    fwdport=extract_all_forward_actions_from_policy(policy)       
     fwdport=filter(lambda port: port not in sdx.participant_2_port[participant][participant],fwdport)
+    
     if debug==True: print "default forwarding for these peers: ",fwdport
+    #print "best path: ",best_path
     if len(best_path.keys())!=0:
         if debug==True: print type(best_path.keys()[0])
     bestpaths=filter(lambda x: int(x) in fwdport,best_path.keys()) 
+    #print bestpaths
     if debug==True: print bestpaths
     
     policy_ip = parallel([match_prefixes_set(set(best_path[peer])) >> fwd(participant_list[participant][unicode(str(peer))][0]) 
                         for peer in bestpaths]) 
+    #print "initial: ",policy_ip
+    set1=set(bestpaths)
+    set2=set(inboundPorts)
+    remaining=list(set1.union(set2).difference(set1))
+    
+    #print "remainig: ",remaining
+    for peer in remaining:
+        pfxset=[]
+        for pfx in sdx.inbound[peer]:
+            if peer in best_path:                
+                if pfx in best_path[peer]:
+                    #print "Additional rule for: ",peer,pfx
+                    pfxset.append(pfx)
+        #print pfxset
+        if len(pfxset)>0:
+            policy_ip+=(match_prefixes_set(set(pfxset)))>>fwd(participant_list[participant][unicode(str(peer))][0])
+            policy_ip.policies=filter(lambda x: x!=drop,policy_ip.policies)
+    #print "Final: ",policy_ip
     # if debug==True: print policy_ip
     return policy_ip 
 
@@ -427,8 +451,12 @@ def vnh_assignment(sdx, participants):
     #----------------------------------------------------------------------------------------------------#
     # 1. Get the best paths data structure
     # 2. Get the participant_2_prefix data structure from participant's policies
-
-    best_paths = get_bestPaths(participant_to_ebgp_nh_received)
+    if sdx.best_paths!={}:
+        best_paths = get_bestPaths(participant_to_ebgp_nh_received)
+        sdx.best_paths=best_paths
+    else:
+        best_paths=sdx.best_paths
+        
     #if debug==True: print 'best_paths: ', best_paths
     # get the participant_2_prefix structure
     # without taking default forwarding policies into consideration
@@ -477,7 +505,7 @@ def vnh_assignment(sdx, participants):
     # Step 5
     # Step 5a: Get expanded policies
     for participant in participants_policies:
-        #if debug==True: print "PARTICIPANT: ",participant
+        if debug==False: print "PARTICIPANT: ",participant
         X_policy = participants_policies[participant]
         #if debug==True: print "Original policy:", X_policy
         
@@ -489,7 +517,7 @@ def vnh_assignment(sdx, participants):
 
         participants_policies[participant] = X_b
         participants[participant].policies = participants_policies[participant]
-        #if debug==True: print "Policy after Step 5:", participants_policies[participant]
+        if debug==False: print "Policy after Step 5:", participants_policies[participant]
         # classifier=participants_policies[participant].compile()
         # if debug==True: print "Compilation result",classifier
 

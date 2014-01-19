@@ -129,6 +129,8 @@ class SDX(object):
         self.part_2_prefix_lcs={}
         self.prefix_2_part={}
         self.lcs_old=[]
+        self.inbound={}
+        self.best_paths={}
         
     def get_participantName(self,ip):
         pname=''
