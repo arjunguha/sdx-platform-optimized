@@ -904,6 +904,8 @@ class disjoint(CombinatorPolicy):
         :rtype: Classifier
         """
         #print "lower policies: ",self.lower
+        print "Disjoint Policies compiler called",len(self.policies)
+        start1=time.time()
         global hash_time
         hash_time=0
         assert(len(self.policies) > 0)
@@ -928,8 +930,9 @@ class disjoint(CombinatorPolicy):
             last_rule=[tmp_rules[len(tmp_rules)-1]]
             aggr_rules+=tmp_rules[:len(tmp_rules)-1]
                 
-            if compile_debug==True: print "time to extract result from cache: ",time.time()-start,policy
-        
+            if compile_debug==False: print "time to extract result from cache: ",time.time()-start
+        print "D time to compile upper : ",time.time()-start1
+        start1=time.time()
         for policy in self.lower:
             tmp_rules=None
             if compiler_optimize==True:
@@ -951,6 +954,8 @@ class disjoint(CombinatorPolicy):
         #classifiers = Classifier(aggr_rules).optimize()
         classifiers=aggr_rules
         if compile_debug==True: print "time to optimize the results: ",time.time()-start
+        print "D time to compile: ",time.time()-start1
+        
         return classifiers
         
         

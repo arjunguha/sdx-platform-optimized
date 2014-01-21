@@ -6,6 +6,7 @@ from common import *
 import sys,json
 verify=False
 debug=False
+uniformRIB=True
 
 headerFields=['dstport','srcport','srcip']
 fieldValues={'dstport':range(1,101),'srcport':range(1,101),
@@ -15,7 +16,7 @@ def getPrefixes(sdx,n):
     pfxes={}
     for i in range(n):
         # modify later to get real IP prefixes here
-        pfxes['p'+str(i+1)]=''
+        pfxes[(i+1)]=''
     sdx.prefixes=pfxes
 
 def getPrefixAnnounced(k,sdx):
@@ -36,7 +37,7 @@ def update_bgp(sdx,advertisers,nprefixes,ntot):
     n2*=ntot
     
     n1=int(n1)
-    n1=1 # limiting top advertiser to 1 (hacky hack)
+    #n1=1 # limiting top advertiser to 1 (hacky hack)
     if n1==0:
         n1=1
     
@@ -67,33 +68,57 @@ def update_bgp(sdx,advertisers,nprefixes,ntot):
         update_prefix2part(prefix_2_part,sdx,participant.id_)
     if debug==True: print sdx.prefixes_announced
     sdx.prefix_2_part=prefix_2_part
-    # Now assign the ebgp nh
-    participant_to_ebgp_nh_received={}
-    for participant in sdx.participants:
-        if participant.id_ not in participant_to_ebgp_nh_received:
-            participant_to_ebgp_nh_received[participant.id_]={}
-        # bias the nh decision in favor of top advertisers
-        biasFactor=1 # probability of selecting top advertiser is 9 time that of others
-        for prefix in sdx.prefixes:  
-            if prefix not in sdx.prefixes_announced['pg1'][participant.id_]:
-                tmp=[]
-                #print "Pre bias: ",prefix_2_part[prefix]
-                for elem in prefix_2_part[prefix]:
-                    #print int(elem)
-                    if int(elem)<=n1:
-                        for i in range(biasFactor):
-                            tmp.append(elem)
-                    
-                    else:
+    if uniformRIB==True:
+        #print "uniform"
+        ebgp_nh_received={}
+        biasFactor=9 # probability of selecting top advertiser is 9 time that of others
+        for prefix in sdx.prefixes:
+            tmp=[]
+            for elem in prefix_2_part[prefix]:
+                #print int(elem)
+                if int(elem)<=n1:
+                    for i in range(biasFactor*len(prefix_2_part[prefix])):
                         tmp.append(elem)
-                                    
-                #print "Post bias: ",tmp                   
-                participant_to_ebgp_nh_received[participant.id_][prefix]=random.choice(tmp)
+                
+                else:
+                    tmp.append(elem)
+                                
+            #print "Post bias: ",tmp                   
+            ebgp_nh_received[prefix]=random.choice(tmp)
+        participant_to_ebgp_nh_received={}
+        for participant in sdx.participants:
+            participant_to_ebgp_nh_received[participant.id_]=ebgp_nh_received
+        
+            
+    else:
+        # Now assign the ebgp nh
+        participant_to_ebgp_nh_received={}
+        for participant in sdx.participants:
+            if participant.id_ not in participant_to_ebgp_nh_received:
+                participant_to_ebgp_nh_received[participant.id_]={}
+            # bias the nh decision in favor of top advertisers
+            biasFactor=1 # probability of selecting top advertiser is 9 time that of others
+            for prefix in sdx.prefixes:  
+                if prefix not in sdx.prefixes_announced['pg1'][participant.id_]:
+                    tmp=[]
+                    #print "Pre bias: ",prefix_2_part[prefix]
+                    for elem in prefix_2_part[prefix]:
+                        #print int(elem)
+                        if int(elem)<=n1:
+                            for i in range(biasFactor*len(prefix_2_part[prefix])):
+                                tmp.append(elem)
+                        
+                        else:
+                            tmp.append(elem)
+                                        
+                    #print "Post bias: ",tmp                   
+                    participant_to_ebgp_nh_received[participant.id_][prefix]=random.choice(tmp)
     if debug==True: print "ebgp updated: ",participant_to_ebgp_nh_received   
     best_paths = get_bestPaths(participant_to_ebgp_nh_received)
     sdx.best_paths=best_paths
-    if debug==True: print best_paths
+    if debug==True: print "best paths: ",best_paths
     sdx.participant_to_ebgp_nh_received=participant_to_ebgp_nh_received
+    
 
 def setPred(field,val):
     if field=='dstport':
@@ -122,17 +147,45 @@ def getDisjointPolicies(pdict):
     k=pdict.keys()[0]
     v=pdict[k]
     pdict.pop(k,v)
-    pred=drop
+    
     if k!=identity:
-        for pol in k.policies:
-            pred|=pol
-        pred.policies=filter(lambda x:x!=drop,pred.policies)
+        #print "k:",k.policies
+        if isinstance(k,sequential):
+            #print "seq"
+            pred=identity
+            for pol in k.policies:
+                print pol,pred
+                pred=intersection([pred,pol])
+                print pred
+                
+            #pred.policies=filter(lambda x:x!=identity,pred.policies)
+        elif isinstance(k,parallel):
+            #print "++"
+            pred=drop
+            for pol in k.policies:
+                pred|=pol
+            pred.policies=filter(lambda x:x!=drop,pred.policies)
+        elif isinstance(k,union):
+            #print "union"
+            pred=drop
+            for pol in k.policies:
+                pred|=pol
+            pred.policies=filter(lambda x:x!=drop,pred.policies)
+        elif isinstance(k,intersection):
+            #print "intersection"
+            pred=identity
+            for pol in k.policies:
+                pred= pred and pol
+            #pred.policies=filter(lambda x:x!=identity,pred.policies)
+        
     else:
         pred=identity
+    #print "pred: ",pred
     t=v    
     f=None
+    #print "rem: ",pdict
     if len(pdict.keys())>=1:
-        #print len(pdict.keys())
+        print len(pdict.keys())
         f=getDisjointPolicies(pdict)
         #print "f: ",f
     else:
@@ -220,13 +273,126 @@ def isDefault(sdx,participant):
     policy=participant.policies
     assert(isinstance(policy,if_))
     assert(isinstance(policy.pred,union))
-    if policy.pred.policies[0]==identity:
-        #print participant.id_," is default"
-        return True
+    tmp=policy.pred.policies[0]
+    #assert(isinstance(tmp,match))
+    
+    if isinstance(tmp,match):
+        if 'outport' in tmp.map:
+            #print participant.id_," is default",tmp.map
+            return True
+            
+        else:
+            #print participant.id_," is non-default",tmp.map
+            return False
     else:
         #print participant.id_," is not default"
         return False
 
+def disjointReCompose(sdx,affectedVNH,newVNH):
+    disjointPolicies=[]
+    lowerPolicies=[]
+    if debug==True: print "disjointReCompose called",affectedVNH.values()[0]
+    # take into consideration the participants with inbound policies
+    # They need to be assigned lower priority than the rules matching the inport fields
+    for participant in sdx.participants:
+        if (isDefault(sdx,participant)==False):
+            
+            match_ports1=no_packets
+            for tmp in sdx.participant_2_port[participant.id_][participant.id_]:
+                 match_ports1|=match(outport=tmp)            
+            match_ports1.policies=filter(lambda x:x!=drop,match_ports1.policies)
+            tmp_policy=match_ports1>>participant.policies>>match_ports1
+            lowerPolicies.append(tmp_policy)
+            #print "participant: ",participant.id_," non-default identified", tmp_policy.compile()
+        
+    for participant in sdx.participants:
+
+        if debug==True: print "Participant",participant.id_,participant.policies
+        
+        # get list of all participants to which it forwards
+        fwdport=extract_all_forward_actions_from_policy(participant.policies)
+                
+        #print list of forwardports
+        #print participant.id_,": ",fwdport
+        
+        # Remove participant's own ports from the fwdport list        
+        fwdport=filter(lambda port: port not in sdx.participant_2_port[participant.id_][participant.id_],fwdport)
+        tmp_policy=drop
+        if debug==True: print participant.policies.compile()       
+        for port in fwdport:
+            peer_id=sdx.port_2_participant[int(port)] # Name of fwding participant
+            peer=sdx.participants_dict[peer_id] # Instance of fwding participant
+            
+            if debug==True: print "Seq compiling policies of part: ",participant.id_," with peer: ",peer_id
+            match_ports=no_packets
+            for tmp in sdx.participant_2_port[participant.id_][participant.id_]:
+                 match_ports|=match(inport=tmp)            
+            match_ports.policies=filter(lambda x:x!=drop,match_ports.policies)
+            
+            match_ports1=no_packets
+            for tmp in sdx.participant_2_port[peer_id][peer_id]:
+                 match_ports1|=match(outport=tmp)            
+            match_ports1.policies=filter(lambda x:x!=drop,match_ports1.policies)
+            #print participant.policies,peer.policies
+            tmp_policy+=(match_ports>>participant.policies>>match_ports1>>peer.policies>>match_ports1)
+            #print tmp_policy
+        
+        #print tmp_policy
+        if debug==True: print tmp_policy.compile()
+        if tmp_policy!=drop:
+            disjointPolicies.append(tmp_policy)
+            
+           
+        if debug==True: print "Recompose Participant",participant.id_,participant.policiesRecompose
+        
+        # get list of all participants to which it forwards
+        fwdport=extract_all_forward_actions_from_policy(participant.policiesRecompose)
+                
+        #print list of forwardports
+        #print participant.id_,": ",fwdport
+        
+        # Remove participant's own ports from the fwdport list        
+        fwdport=filter(lambda port: port not in sdx.participant_2_port[participant.id_][participant.id_],fwdport)
+        tmp_policy1=drop    
+        for port in fwdport:
+            peer_id=sdx.port_2_participant[int(port)] # Name of fwding participant
+            peer=sdx.participants_dict[peer_id] # Instance of fwding participant
+            
+            if debug==True: print "Seq compiling policies of part: ",participant.id_," with peer: ",peer_id
+            match_ports=no_packets
+            for tmp in sdx.participant_2_port[participant.id_][participant.id_]:
+                 match_ports|=match(inport=tmp)            
+            match_ports.policies=filter(lambda x:x!=drop,match_ports.policies)
+            
+            match_ports1=no_packets
+            for tmp in sdx.participant_2_port[peer_id][peer_id]:
+                 match_ports1|=match(outport=tmp)            
+            match_ports1.policies=filter(lambda x:x!=drop,match_ports1.policies)
+            #print participant.policies,peer.policies
+            tmp_policy1+=(match(dstmac=newVNH.values()[0])>>match_ports>>participant.policiesRecompose>>match_ports1>>peer.policiesRecompose>>match_ports1)
+            #print tmp_policy1
+        
+        
+            
+            
+            
+        #print tmp_policy
+        if debug==True: print participant.id_,tmp_policy1.compile()
+        if tmp_policy1!=drop:
+            disjointPolicies.append(tmp_policy1)
+            
+    dPolicy=disjoint(disjointPolicies,lowerPolicies)
+    if debug==True: print "Compile the disjoint policies"
+    start_comp=time.time()
+    dclassifier=dPolicy.compile()
+    if debug==True: print dclassifier
+    nRules=len(dclassifier)
+    if debug==True: print nRules
+    compileTime=time.time() - start_comp
+    if debug==True: print  'Completed Disjoint Compilation ',compileTime, "seconds"
+    return nRules,compileTime     
+    
+        
 
 def disjointCompose(sdx):
     disjointPolicies=[]
@@ -237,13 +403,14 @@ def disjointCompose(sdx):
     # They need to be assigned lower priority than the rules matching the inport fields
     for participant in sdx.participants:
         if (isDefault(sdx,participant)==False):
+            
             match_ports1=no_packets
             for tmp in sdx.participant_2_port[participant.id_][participant.id_]:
                  match_ports1|=match(outport=tmp)            
             match_ports1.policies=filter(lambda x:x!=drop,match_ports1.policies)
             tmp_policy=match_ports1>>participant.policies>>match_ports1
             lowerPolicies.append(tmp_policy)
-            #print "participant: ",participant.id_," inbound policy: ",tmp_policy
+            #print "participant: ",participant.id_," non-default identified", tmp_policy.compile()
         
         
         
@@ -284,7 +451,8 @@ def disjointCompose(sdx):
             
         #print tmp_policy
         if debug==True: print tmp_policy.compile()
-        disjointPolicies.append(tmp_policy)
+        if tmp_policy!=drop:
+            disjointPolicies.append(tmp_policy)
             
     dPolicy=disjoint(disjointPolicies,lowerPolicies)
     if debug==True: print "Compile the disjoint policies"
@@ -312,12 +480,15 @@ def generatePolicies(sdx,participants,ntot,nmult,partTypes,frand,nfields,nval,he
     for k in fieldValues:
         fieldValues[k]=random.sample(fieldValues[k],nval)
     
+    """
+    # Currently ignoring inbound policies matching on dstip
     hfin.append('match_prefixes_set')
     vals=[]
-    for k in sdx.prefixes.keys():
-        #print k
-        vals.append(set([str(k)]))
+    for k in sdx.pfxgrp.keys():
+        print k
+        vals.append(sdx.pfxgrp[k])
     fieldValues['match_prefixes_set']=vals
+    """
     #print headerFields,hfin
     if debug==True: print fieldValues
    
@@ -338,7 +509,7 @@ def generatePolicies(sdx,participants,ntot,nmult,partTypes,frand,nfields,nval,he
     n3=sum(nparts[0:3])
 
     # Logic to equally divide prefix sets announced by each Tier1 ISPs
-    tmp=sdx.prefixes.keys()
+    tmp=sdx.pfxgrp.keys()
     div=int(float(len(tmp))/nparts[0])
     pset={}
     for i in range(nparts[0]-1):
@@ -346,11 +517,13 @@ def generatePolicies(sdx,participants,ntot,nmult,partTypes,frand,nfields,nval,he
         pset[i+1]=tmp[k:k+div]
     k=(nparts[0]-1)*div
     pset[nparts[0]]=tmp[k:]
+    #print pset
     
     nrand=int(frand*ntot)
     if nrand==0:
         nrand=1
-    intensityFactor=1 # more rules for top eyeballs and content providers    
+    #nrand=2
+    intensityFactor=2 # more rules for top eyeballs and content providers    
     inbound={}
     for participant in sdx.participants:
         policy=drop
@@ -405,11 +578,11 @@ def generatePolicies(sdx,participants,ntot,nmult,partTypes,frand,nfields,nval,he
             topEyeballs=random.sample(range(1,n1+1),nrand)
             for pid in topEyeballs:
                 # "part: ",pid
-                announced=sdx.prefixes_announced['pg1'][unicode(pid)]
+                announced=sdx.pfxgrp.keys()
                 # currently selecting only one dstip prefix set for writing specific rules
                 pfxset=random.choice(announced)
                 tmp=getPred(headerFields,fieldValues,nfields)
-                tmp=(match_prefixes_set([pfxset])>>tmp)               
+                tmp=(match_prefixes_set(sdx.pfxgrp[pfxset])>>tmp)               
                 pdict[tmp]=fwd(participant.peers[str(pid)].participant.phys_ports[0].id_)
            
             
@@ -419,11 +592,17 @@ def generatePolicies(sdx,participants,ntot,nmult,partTypes,frand,nfields,nval,he
             # outbound policies for top eyeballs
             for pid in range(1,n1+1):
                 # "pset:",pset[pid]
-                for pfxset in pset[pid]:
-                    tmp=(match_prefixes_set([pfxset])>>getPred(headerFields,fieldValues,nfields))
+                #print len(pset[pid]),pset
+                for pfxset in random.sample(pset[pid],len(pset[pid])):
+                    t1=(match_prefixes_set(sdx.pfxgrp[pfxset]))
+                    t2=(getPred(headerFields,fieldValues,nfields))
+                    t=[t1,t2]
+                    tmp=t1>>t2
+                    #print "SEQ: ",tmp
+                    #tmp=(drop|match_prefixes_set(sdx.pfxgrp[pfxset]))
                     pdict[tmp]=fwd(participant.peers[str(pid)].participant.phys_ports[0].id_)
                 #print pdict
-            
+            """
             # outbound policies for traffic to randomly selected tier2 
             tier2=random.sample(range(n1+1,n2+1),intensityFactor*nrand) 
             for pid in tier2:
@@ -432,9 +611,9 @@ def generatePolicies(sdx,participants,ntot,nmult,partTypes,frand,nfields,nval,he
                 tmp=getPred(headerFields,fieldValues,nfields)
                 tmp=(match_prefixes_set([pfxset])>>tmp)
                 pdict[tmp]=fwd(participant.peers[str(pid)].participant.phys_ports[0].id_)
-
+            """
             # inbound policies for randomly selected tier2
-            tier2=random.sample(range(n1+1,n2+1),intensityFactor*nrand) 
+            tier2=random.sample(range(n1+1,n2+1),nrand) 
             if debug==True: print tier2          
             for pid in tier2:
                 tmp=getPred(hfin,fieldValues,nfields)
@@ -461,46 +640,264 @@ def generatePolicies(sdx,participants,ntot,nmult,partTypes,frand,nfields,nval,he
         # This is to ensure that participants have no ambiguity in its forwarding action
         # All rules are iteratively applied with if_ class of rules
         policy=getDisjointPolicies(pdict)
-        
+       
         #print policy.compile()
-        if debug==True: print policy 
+        if debug==False: print policy 
             
         participant.policies=policy
         participant.original_policies=participant.policies
     sdx.inbound=inbound
     # sdx.inbound
-            
+
+def getPfxGroup(nprefixes,fractionGroup):
+    pfxgrp={}
+    ng=int(nprefixes*fractionGroup)
+    #print ng
+    sample=[]     
+    for i in range(1,ng+1):
+        tmp=ng+1-i
+        tmp=tmp
+        for j in range(tmp):
+            sample.append(i) 
+    #print sample
+    for pfx in range(1,nprefixes+1):
+        N=random.choice(sample)
+        gname='pg'+str(N)
+        if gname not in pfxgrp:
+            pfxgrp[gname]=[]
+        pfxgrp[gname].append(pfx)
+    return pfxgrp 
+    #print pfxgrp  
+    
+def traverse(sdx,policy,affectedVNH,newVNH):
+    #print "Called for : ",policy
+    if isinstance(policy,intersection):
+        #print policy
+        tmp=intersection(map(lambda p: traverse(sdx,p,affectedVNH,newVNH), policy.policies))
+        flag=False
+        
+        #print tmp.policies
+        for pol in tmp.policies:            
+            if isinstance(pol,match):
+                #if 'dstmac' in pol.map:
+                flag=True
+            if isinstance(pol,union) or isinstance(pol,parallel) or isinstance(pol,intersection):
+                flag=True
+        if flag==True:
+            #print "App match pol: ",tmp
+            tmp.policies=filter(lambda p:p!=identity,tmp.policies)
+            #print "App post filter: ",tmp
+            if drop not in tmp.policies:
+                return tmp
+            else:
+                return union([])
+        else:
+            return union([])
+
+    
+    elif isinstance(policy, union):
+        #print "init",policy
+        
+        tmp=union(map(lambda p: traverse(sdx,p,affectedVNH,newVNH), policy.policies))
+        flag=False
+        #print policy.policies
+        for pol in tmp.policies:            
+            if isinstance(pol,match):
+                #if 'dstmac' in pol.map:
+                flag=True
+            if isinstance(pol,union) or isinstance(pol,parallel) or isinstance(pol,intersection):
+                flag=True
+        if flag==True:
+            #print "App match pol: ",tmp
+            tmp.policies=filter(lambda p:p!=drop,tmp.policies)
+            #print "App post filter: ",tmp
+            return tmp
+        else:
+            return union([])
+
+    elif isinstance(policy, parallel):
+        #print "++ before",policy.policies
+        tmp=parallel(map(lambda p: traverse(sdx,p,affectedVNH,newVNH), policy.policies))
+        tmp.policies=filter(lambda p:p!=drop,tmp.policies) 
+        #print "++ ater",tmp.policies
+        flag=False
+        #print policy.policies
+        for pol in tmp.policies:            
+            if isinstance(pol,match):
+                if 'dstmac' in pol.map:
+                    flag=True
+            elif isinstance(pol,sequential):
+                flag=True
+
+        if flag==True:
+            #print "++App match pol: ",tmp
+            tmp.policies=filter(lambda p:p!=drop,tmp.policies)
+            #print "++App post filter: ",tmp
+            return tmp
+        else:
+            return union([])
+               
+        return tmp
+    
+    elif isinstance(policy, sequential):
+        tmp=sequential(map(lambda p: traverse(sdx,p,affectedVNH,newVNH), policy.policies))
+        #tmp.policies=filter(lambda p:p!=drop,tmp.policies)
+        if drop in tmp.policies:
+            return drop
+        else:
+            return tmp
+    elif isinstance(policy, if_):
+        #if debug==True: print policy
+        pred=traverse(sdx,policy.pred,affectedVNH,newVNH)
+        t=traverse(sdx,policy.t_branch,affectedVNH,newVNH)                  
+        f=traverse(sdx,policy.f_branch,affectedVNH,newVNH)
+        if pred==drop:
+            return f
+        else:
+            return if_(traverse(sdx,policy.pred,affectedVNH,newVNH),
+                   traverse(sdx,policy.t_branch,affectedVNH,newVNH),
+                   traverse(sdx,policy.f_branch,affectedVNH,newVNH))
+    else:
+        if isinstance(policy, match):
+            if 'dstmac' in policy.map:
+                #print policy.map['dstmac']
+                if policy.map['dstmac']==affectedVNH.values()[0]:
+                    #print "Affected mac found"
+                    return match(dstmac=newVNH.values()[0])
+                else:
+                    return drop
+            else:
+                return policy
+        else:
+            return policy
+    
 
 def main(argv):
     # define the parameters
-    ntot=10 # total number of participants
-    fmult=0.2  # fraction of participants with multiple ports
+    ntot=400 # total number of participants
+    fmult=0.05  # fraction of participants with multiple ports
     nmult=int(ntot*fmult)
     nports=2 # number of ports for the participants with multiple ports 
-    nprefixes=10
-    Np=100 #total number of prefixes
+    nprefixes=1000 # total # of prefixes
+    fractionGroup=0.01 # fraction of prefix groups wrt total prefixes
+    
+    #Np=100 #total number of prefixes
     advertisers=[(0.05,1),(0.15,0.20),(0.80,0.01)]
     partTypes=[0.05,0.15,0.05,0.75]
     frand=0.025
-    nfields=3
-    nval=5
+    nfields=1
+    nval=50
     
     sdx_participants=generate_sdxglobal(ntot,nmult,nports) 
        
     (sdx,participants) = sdx_parse_config('sdx_global.cfg')
-    
+    # get pfx groups for writing SDX policies
+    sdx.pfxgrp=getPfxGroup(nprefixes,fractionGroup)
+    #print len(sdx.pfxgrp.keys())
     update_paramters(sdx,ntot,nports)
     
-    update_bgp(sdx,advertisers,nprefixes,ntot)    
+    update_bgp(sdx,advertisers,nprefixes,ntot) 
+    #print sdx.prefix_2_part
+      
+    
     
     generatePolicies(sdx,participants,ntot,nmult,partTypes,frand,nfields,nval,headerFields,fieldValues)
-    
+    start=time.time()
     vnh_assignment(sdx,participants)
-    
+    print "Policy Augmentation: ",time.time()-start
     compile_Policies(participants)
     
+    start=time.time()
     nRules,compileTime=disjointCompose(sdx)
     print nRules,compileTime
+    updateEval=True
+    if updateEval==True:
+        # find the prefix to send update for
+        print "Finding the right prefix"
+        #print len(sdx.lcs_old)
+        upPfx,pset_orig=getUpdatePfx(sdx)
+        
+        bp=sdx.best_paths[unicode(1)]
+        pool=[]
+        for peer in bp:
+            if upPfx in bp[peer]:
+                print peer
+                pool=sdx.prefix_2_part[upPfx]
+                pool.remove(unicode(peer))
+        print pool
+        assert(len(pool)!=0)
+        frac,x=advertisers[0]
+        n1=int(frac*ntot)
+        if n1==0:
+            n1=1
+        tmp=[]
+        biasfactor=9
+        for elem in pool:
+            if int(elem)<=n1:
+                for i in range(biasfactor*len(pool)):
+                    tmp.append(elem)
+        nh=random.choice(tmp)
+        print "new NH: ",(nh)
+        affectedVNH={}
+        for vnh in sdx.VNH_2_pfx:
+            if upPfx in sdx.VNH_2_pfx[vnh]:
+                print vnh,sdx.VNH_2_mac[vnh]
+                affectedVNH[vnh]=sdx.VNH_2_mac[vnh]
+        # Get a new VNH
+        count=len(sdx.lcs_old)+1
+        vname='VNH'+str((count))
+        newMac={}
+        newMac[vname] = MAC(str(EUI(int(EUI(VNH_2_mac['VNH']))+count)))
+        
+        for part in sdx.participants:
+            #print part.id_,part.policies
+            tmp=traverse(sdx,part.policies,affectedVNH,newMac)
+            #print part.id_,tmp
+            part.policiesRecompose=tmp
+            #print tmp.compile()
+            
+        nRules,compileTime=disjointReCompose(sdx,affectedVNH,newMac)
+        print nRules,compileTime
+
+        """
+        for part in sdx.participants:
+            sdx.participant_to_ebgp_nh_received[part.id_][upPfx]=nh
+            part.policies=part.original_policies
+        sdx.best_paths = get_bestPaths(sdx.participant_to_ebgp_nh_received)
+        print upPfx in sdx.best_paths[unicode(1)][nh]
+        """
+        
+        #vnh_assignment(sdx,participants)
+        
+        # Update the ebgpnh
+                
+                
+                
+        # Select a new NH for this prefix
+        
+        
+        """
+        # Assign it a new VNH
+        lcs=sdx.lcs_old
+        vname='VNH'+str((len(sdx.lcs_old)+1))
+        print vname
+        print len(lcs)
+        lcs.remove(pset_orig)
+        pset1=pset_orig.difference(set([upPfx]))
+        pset2=set([upPfx])
+        lcs.append(pset1)
+        lcs.append(pset2)
+        print len(lcs)
+        
+        #print sdx.VNH_2_pfx
+        """
+        
+        # Augment the policies as usual
+        
+        # compose and compile the policy
+        
+    """
+    print "Total compose time: ",time.time()-start
     
     nRules,compileTime=disjointCompose(sdx)
     print nRules,compileTime
@@ -508,7 +905,7 @@ def main(argv):
     # top advertisers policy changes
     #changePartPolicy(sdx)
     
-    """
+    
     
     part_2_fwd=getFwd(sdx)
     print part_2_fwd
@@ -537,7 +934,19 @@ def main(argv):
     # outbound policies, these participants in our case are top advertisers. 
     
     """
-    
+
+def getUpdatePfx(sdx):
+    tmp={}
+    mlen=0
+    for elem in sdx.lcs_old:
+        l=len(elem)
+        tmp[l]=elem
+        if l>mlen:
+            mlen=l
+    #print mlen,tmp[mlen]
+    upPfx=random.choice(list(tmp[mlen]))
+    return upPfx,tmp[mlen]
+  
 def getFwd(sdx):
     p2f={}
     for part in sdx.participants:

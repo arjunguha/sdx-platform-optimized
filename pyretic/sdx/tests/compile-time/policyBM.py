@@ -11,7 +11,7 @@ import os,json,sys
 import subprocess
 from multiprocessing import Process, Queue
 
-dataPoints=4
+dataPoints=2
 
 def getKey(ntot,npfx):
     return str(ntot)+","+str(npfx)
@@ -47,7 +47,7 @@ def send_email(option):
         print "failed to send mail"
     
 def main(option):
-    dname=option+'BM.dat'
+    dname=option+'BM.dat'+time.time()
     if option=='predicate':
         data={}
         print 'Running Predicate Experiment'
@@ -93,7 +93,7 @@ def main(option):
         nparts=[20,40,80,160]
         
         npfx=10
-        nfields=0
+        nfields=1
 
         #data['partpfx']=partpfx
         data['modes']=modes
@@ -130,10 +130,10 @@ def main(option):
         #modes=['dlsm','lsm','naive']
         #nparts=[20,40,80,160]
         #modes=['dlsm','lsm']
-        nparts=[50,100,150,200]
-        npfxes=[20,40,60,80,100]
+        nparts=[50]
+        npfxes=[200,400,600]
         #npfx=10
-        nfields=0
+        nfields=1
         mode='dlsm'
         #data['partpfx']=partpfx
         data['npfxes']=npfxes

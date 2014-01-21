@@ -33,9 +33,9 @@ def composeExperiment(mode,ntot,nprefixes,nfields,q=None):
     
     generatePolicies(sdx,participants,ntot,nmult,partTypes,frand,nfields,nval,headerFields,fieldValues)
     
-    vnh_assignment(sdx,participants)
+    #vnh_assignment(sdx,participants)
     
-    compile_Policies(participants)
+    #compile_Policies(participants)
     print "Starting policy composition",time.time()-start
     #print participants[unicode(1)].policies
     if mode=='dlsm':

@@ -1,8 +1,8 @@
 #############################################
-# Set Operations on IP Prefixes             #
+# Set Operations on IP Prefixes (MDS)       #
 # author: Arpit Gupta (glex.qsd@gmail.com)  #
 #############################################
-import os,sys
+import os,sys,time
 from multiprocessing import Process, Queue
 import multiprocessing as mp
 import cProfile
@@ -342,6 +342,7 @@ def decompose_multi(part_2_prefix,q=None,index=0):
 
     
 def lcs_multiprocess(part_2_prefix,verify=True,sdx=None):
+    start=time.time()
     if verify==False:
         tmp=[]
         k=''
@@ -353,6 +354,7 @@ def lcs_multiprocess(part_2_prefix,verify=True,sdx=None):
         
     else:
         lcs=decompose_multi(part_2_prefix,index=1)     
+    print len(lcs.values()[0]),time.time()
     #print lcs
     part_2_prefix_updated={}
     # Todo: Try to parallelize this later
