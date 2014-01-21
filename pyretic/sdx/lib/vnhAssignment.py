@@ -480,6 +480,8 @@ def vnh_init(sdx, participants):
     
     
 def vnh_assignment(sdx, participants):
+    mdsTime=0
+    nVNHs=0
     # Initialize the required data structures
     VNH_2_IP, VNH_2_mac, prefixes, participant_list, port_2_participant, peer_group, participant_to_ebgp_nh_received, prefixes_announced, participants_policies = vnh_init(sdx, participants)
     
@@ -521,7 +523,9 @@ def vnh_assignment(sdx, participants):
     else:
         part_2_prefix_updated, lcs = lcs_multiprocess(participant_2_prefix)
     if debug==True: print 'After Set operations: ',part_2_prefix_updated
-    print "MDS time: ",time.time()-start
+    mdsTime=time.time()-start
+    nVNHs=len(lcs)
+    print "MDS time: ",mdsTime
     sdx.part_2_prefix_lcs = part_2_prefix_updated
     sdx.lcs_old = lcs
         
@@ -562,6 +566,7 @@ def vnh_assignment(sdx, participants):
         if debug==True: print "Policy after Step 5:", participants_policies[participant]
         # classifier=participants_policies[participant].compile()
         # if debug==True: print "Compilation result",classifier
+    return mdsTime,nVNHs
 
 
 def update_vnh_assignment(sdx, participants):

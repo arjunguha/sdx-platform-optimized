@@ -37,7 +37,7 @@ def update_bgp(sdx,advertisers,nprefixes,ntot):
     n2*=ntot
     
     n1=int(n1)
-    #n1=1 # limiting top advertiser to 1 (hacky hack)
+    #n1=1 # limiting top advertiser to 1 (hacky hack). This means that bias factor is in favor of only one top advertiser
     if n1==0:
         n1=1
     
@@ -76,7 +76,8 @@ def update_bgp(sdx,advertisers,nprefixes,ntot):
             tmp=[]
             for elem in prefix_2_part[prefix]:
                 #print int(elem)
-                if int(elem)<=n1:
+                if int(elem)<=1: 
+                    # biasing the result in favor of only one top advertiser to 1 (hacky hack). This means that bias factor is in favor of only one top advertiser
                     for i in range(biasFactor*len(prefix_2_part[prefix])):
                         tmp.append(elem)
                 
@@ -154,9 +155,9 @@ def getDisjointPolicies(pdict):
             #print "seq"
             pred=identity
             for pol in k.policies:
-                print pol,pred
+                #print pol,pred
                 pred=intersection([pred,pol])
-                print pred
+                #print pred
                 
             #pred.policies=filter(lambda x:x!=identity,pred.policies)
         elif isinstance(k,parallel):
@@ -185,7 +186,7 @@ def getDisjointPolicies(pdict):
     f=None
     #print "rem: ",pdict
     if len(pdict.keys())>=1:
-        print len(pdict.keys())
+        #print len(pdict.keys())
         f=getDisjointPolicies(pdict)
         #print "f: ",f
     else:
@@ -395,6 +396,7 @@ def disjointReCompose(sdx,affectedVNH,newVNH):
         
 
 def disjointCompose(sdx):
+    fullDisjoint=True
     disjointPolicies=[]
     lowerPolicies=[]
     if debug==True: print "disjointCompose called"
@@ -444,15 +446,24 @@ def disjointCompose(sdx):
                  match_ports1|=match(outport=tmp)            
             match_ports1.policies=filter(lambda x:x!=drop,match_ports1.policies)
             #print participant.policies,peer.policies
-            tmp_policy+=(match_ports>>participant.policies>>match_ports1>>peer.policies>>match_ports1)
-            #print tmp_policy
+            tmp1=(match_ports>>participant.policies>>match_ports1>>peer.policies>>match_ports1)
+            if fullDisjoint==True:
+                tmp1=drop+tmp1
+                if tmp1!=drop:
+                    disjointPolicies.append(tmp1)
+            else:
+                tmp_policy+=tmp1
+                #print tmp_policy
             
             
             
         #print tmp_policy
-        if debug==True: print tmp_policy.compile()
-        if tmp_policy!=drop:
-            disjointPolicies.append(tmp_policy)
+        
+        #if debug==True: print tmp_policy.compile()
+        if fullDisjoint!=True:
+            if tmp_policy!=drop:
+                disjointPolicies.append(tmp_policy)
+        
             
     dPolicy=disjoint(disjointPolicies,lowerPolicies)
     if debug==True: print "Compile the disjoint policies"
@@ -642,7 +653,7 @@ def generatePolicies(sdx,participants,ntot,nmult,partTypes,frand,nfields,nval,he
         policy=getDisjointPolicies(pdict)
        
         #print policy.compile()
-        if debug==False: print policy 
+        if debug==True: print policy 
             
         participant.policies=policy
         participant.original_policies=participant.policies
@@ -774,11 +785,11 @@ def traverse(sdx,policy,affectedVNH,newVNH):
 
 def main(argv):
     # define the parameters
-    ntot=400 # total number of participants
+    ntot=40 # total number of participants
     fmult=0.05  # fraction of participants with multiple ports
     nmult=int(ntot*fmult)
     nports=2 # number of ports for the participants with multiple ports 
-    nprefixes=1000 # total # of prefixes
+    nprefixes=500 # total # of prefixes
     fractionGroup=0.01 # fraction of prefix groups wrt total prefixes
     
     #Np=100 #total number of prefixes
@@ -787,6 +798,7 @@ def main(argv):
     frand=0.025
     nfields=1
     nval=50
+    
     
     sdx_participants=generate_sdxglobal(ntot,nmult,nports) 
        
@@ -806,11 +818,12 @@ def main(argv):
     vnh_assignment(sdx,participants)
     print "Policy Augmentation: ",time.time()-start
     compile_Policies(participants)
-    
+
     start=time.time()
     nRules,compileTime=disjointCompose(sdx)
     print nRules,compileTime
-    updateEval=True
+
+    updateEval=False
     if updateEval==True:
         # find the prefix to send update for
         print "Finding the right prefix"
@@ -823,6 +836,7 @@ def main(argv):
             if upPfx in bp[peer]:
                 print peer
                 pool=sdx.prefix_2_part[upPfx]
+                print pool
                 pool.remove(unicode(peer))
         print pool
         assert(len(pool)!=0)
@@ -836,6 +850,9 @@ def main(argv):
             if int(elem)<=n1:
                 for i in range(biasfactor*len(pool)):
                     tmp.append(elem)
+            else:
+                tmp.append(elem)
+        print tmp
         nh=random.choice(tmp)
         print "new NH: ",(nh)
         affectedVNH={}
