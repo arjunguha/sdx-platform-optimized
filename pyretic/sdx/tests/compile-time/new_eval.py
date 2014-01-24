@@ -12,8 +12,9 @@ import subprocess
 from multiprocessing import Process, Queue
 
 def prefixGroupExperiment(mode,ntot,nprefixes,nfields,fractionGroup,q=None):
-    print "Starting the experiment with parameters: ",mode,ntot,nprefixes,nfields,len(policy_parl)
+    print "Starting the experiment with parameters: ",mode,ntot,nprefixes,nfields,fractionGroup,len(policy_parl)
     print '...'
+    start=time.time()
     # define the parameters
     ntot=ntot # total number of participants
     fmult=0.05  # fraction of participants with multiple ports
@@ -44,6 +45,7 @@ def prefixGroupExperiment(mode,ntot,nprefixes,nfields,fractionGroup,q=None):
     
     
     generatePolicies(sdx,participants,ntot,nmult,partTypes,frand,nfields,nval,headerFields,fieldValues)
+    print "Time to configure SDX: ",time.time()-start
     
     start=time.time()
     mdsTime,nVNHs=vnh_assignment(sdx,participants)
@@ -52,11 +54,11 @@ def prefixGroupExperiment(mode,ntot,nprefixes,nfields,fractionGroup,q=None):
 
     
     if q==None:
-        return augmentTime,mdsTime
+        return augmentTime,mdsTime,nVNHs
     else:
-        q.put(augmentTime,mdsTime)
+        q.put((augmentTime,mdsTime,nVNHs))
     
     
 if __name__ == '__main__':
-    augmentTime,mdsTime=prefixGroupExperiment('dlsm',100,8000,1,0.01)
+    augmentTime,mdsTime=prefixGroupExperiment('dlsm',500,800,1,0.01)
     

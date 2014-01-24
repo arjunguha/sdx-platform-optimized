@@ -48,6 +48,7 @@ def send_email(option):
     
 def main(option):
     dname=option+'BM.dat'+time.time()
+    
     if option=='predicate':
         data={}
         print 'Running Predicate Experiment'
