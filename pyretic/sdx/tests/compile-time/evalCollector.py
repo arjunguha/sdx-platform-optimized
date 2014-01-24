@@ -11,7 +11,7 @@ import subprocess
 from multiprocessing import Process, Queue
 from time import gmtime, strftime
 
-dataPoints=4
+dataPoints=20
 recursionLimit=100000
 
 def getKey(ntot,npfx):
@@ -109,10 +109,10 @@ def main(option):
         #modes=['dlsm','lsm','naive']
         #nparts=[20,40,80,160]
         #modes=['dlsm','lsm']
-        nparts=[50,100,150]
-        npfxes=[2000,4000,6000,8000,10000]
+        nparts=[100,200,300,500]
+        npfxes=[2500,5000,7500,10000]
         #fractionGroup=[0.025,0.05,0.075,0.1]
-        fractionGroup=[0.025]
+        fractionGroup=[0.01]
         #npfx=10
         nfields=1
         mode='dlsm'

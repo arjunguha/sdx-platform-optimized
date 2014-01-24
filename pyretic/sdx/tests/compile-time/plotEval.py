@@ -28,8 +28,99 @@ def restructureData(data):
     return data
 
 def main(option):
-    dname='prefixBM_sample.dat'   
-    if option=='prefixBM':
+    dname='MDS_Fri24Jan2014051146.dat'  
+    if option=='MDS':
+        print "plotting "+str(option)+" result"
+        #dname="composeBM_matapan.dat"
+        data=json.load(open(dname, 'r'))
+        #data=restructureData(data)
+        params=['#vnhs','mdsTime','augmentTime']
+        xlab=[]
+        for param in params:
+            print "plotting for the param: ",param
+            for k,v in data[param].iteritems():
+                print k
+                tmp_median=[]
+                tmp_stddev=[]
+                print v.keys()
+                tmp={}
+                for hdr in v:
+                    tmp[float(hdr)]=v[hdr]
+                v=tmp              
+                v.keys().sort()
+                xlab=v.keys()
+                print v.keys()
+                for hdr in sorted(v.iterkeys()):
+                    print hdr,v[hdr]
+                    total, average, median, standard_deviation, minimum, maximum, confidence=stats(v[hdr])
+                    print median,standard_deviation
+                    #median=average
+                    tmp_median.append(median)
+                    tmp_stddev.append(standard_deviation)
+                print "median: ",tmp_median
+                data[param][k]['median']=tmp_median
+                data[param][k]['stddev']=tmp_stddev
+                
+            fig = plt.figure(figsize=(12,12))
+            ax = fig.add_subplot(1,1,1)
+            color_n=['g','m','c','r','b','k','w']
+            markers=['o','*','^','s','d','3','d','o','*','^','1','4']
+            p1=[]
+            i=0
+            leg=data[param].keys()
+            leg.sort(reverse=True)
+            legnd=[]
+            for k in leg:
+                #leg.append(float(k))
+                
+                legnd.append('N= '+str(int(k)))
+                a=data[param][k]['median']
+                v=data[param][k]
+                err=data[param][k]['stddev']
+                p1.append([])
+                print sorted(v.iterkeys())
+                xlab.sort()
+                print "xlab: ",xlab
+                p1[i]=pl.errorbar(xlab,a,yerr=err,markerfacecolor=color_n[i],
+                              color='k', markersize=20,ecolor='k',marker=markers[i],
+                              label=k,linewidth=4.0)
+                #pl.text(xlab[int(float(len(xlab)/2))],20+a[int(float(len(a)/2))],'frac= '+str(k),fontsize=20,horizontalalignment='center')
+                i+=1
+            p=[]
+            i=0
+            for k in data[param].keys():
+                p.append(p1[i][0])
+                i+=1
+                
+            for tick in ax.xaxis.get_major_ticks():
+                tick.label.set_fontsize(24)
+            for tick in ax.yaxis.get_major_ticks():
+                tick.label.set_fontsize(24)
+            leg.sort() 
+            pl.legend((p),legnd,'upper left',prop={'size':32})
+            pl.xlabel('# Prefixes',fontsize=32)
+            if param=='#vnhs':
+                pl.ylabel('# Prefix Groups',fontsize=32)
+                #pl.xlim(0,10000+100)
+                ax.set_ylim(ymin=1)
+            elif param=='mdsTime':
+                pl.ylabel('Time(seconds)',fontsize=32)
+                #pl.xlim(0,10000+100)
+                ax.set_ylim(ymin=1)
+            elif param=='augmentTime':
+                pl.ylabel('Time',fontsize=32)
+                #pl.xlim(0,10000+100)
+                ax.set_ylim(ymin=1)
+                #pl.ylim(-10,500)
+                
+            ax.grid(True)
+            
+            plot_name=option+'_'+param+'.eps'
+            plot_name_png=option+'_'+param+'.png'
+            pl.savefig(plot_name)
+            pl.savefig(plot_name_png)
+ 
+    elif option=='prefixBM':
         print "plotting "+str(option)+" result"
         #dname="composeBM_matapan.dat"
         data=json.load(open(dname, 'r'))
