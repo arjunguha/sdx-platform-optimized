@@ -28,7 +28,8 @@ def restructureData(data):
     return data
 
 def main(option):
-    dname='MDS_Fri24Jan2014051146.dat'  
+    #dname='MDS_Fri24Jan2014051146.dat' 
+    dname='MDS_Fri24Jan2014060412.dat' 
     if option=='MDS':
         print "plotting "+str(option)+" result"
         #dname="composeBM_matapan.dat"
@@ -101,15 +102,15 @@ def main(option):
             pl.xlabel('# Prefixes',fontsize=32)
             if param=='#vnhs':
                 pl.ylabel('# Prefix Groups',fontsize=32)
-                #pl.xlim(0,10000+100)
+                pl.xlim(0,10000+100)
                 ax.set_ylim(ymin=1)
             elif param=='mdsTime':
                 pl.ylabel('Time(seconds)',fontsize=32)
-                #pl.xlim(0,10000+100)
+                pl.xlim(0,10000+100)
                 ax.set_ylim(ymin=1)
             elif param=='augmentTime':
                 pl.ylabel('Time',fontsize=32)
-                #pl.xlim(0,10000+100)
+                pl.xlim(0,10000+100)
                 ax.set_ylim(ymin=1)
                 #pl.ylim(-10,500)
                 

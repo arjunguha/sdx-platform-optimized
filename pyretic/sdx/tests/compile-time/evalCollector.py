@@ -72,18 +72,18 @@ def main(option):
         data['modes']=mode
         data['fractionGroup']=fractionGroup
         data['time']={}
-        data['#vnhs']={} 
+        data['nvnhs']={} 
         data['mdsTime']={}
         data['augmentTime']={}       
         for npfx in npfxes:
             ntot=nparts[0]
             k1=npfx
-            data['#vnhs'][k1]={}
+            data['nvnhs'][k1]={}
             data['mdsTime'][k1]={}
             data['augmentTime'][k1]={}
             for fg in fractionGroup:
                 k2=fg
-                data['#vnhs'][k1][k2]=[]
+                data['nvnhs'][k1][k2]=[]
                 data['mdsTime'][k1][k2]=[]
                 data['augmentTime'][k1][k2]=[]
                 
@@ -95,13 +95,76 @@ def main(option):
                     qout=q.get()
                     p.join()
                     augmentTime,mdsTime,nVNHs=qout
-                    data['#vnhs'][k1][k2].append(nVNHs)
+                    data['nvnhs'][k1][k2].append(nVNHs)
                     data['mdsTime'][k1][k2].append(mdsTime)
                     data['augmentTime'][k1][k2].append(augmentTime)
                     
         with open(dname, 'w') as outfile:
             json.dump(data,outfile,ensure_ascii=True,encoding="ascii")          
         print data
+        
+    elif option=='compileTime':
+        data={}
+        print 'Running Compilation Time Experiment'
+
+        #modes=['dlsm','lsm','naive']
+        #nparts=[20,40,80,160]
+        #modes=['dlsm','lsm']
+        nparts=[100,200,300,400]
+        npfxes=[2500,5000,7500,10000]
+        #fractionGroup=[0.025,0.05,0.075,0.1]
+        fractionGroup=[0.005]
+        #npfx=10
+        nfields=1
+        mode='dlsm'
+        #data['partpfx']=partpfx
+        data['nparts']=nparts
+        data['npfxes']=npfxes
+        data['nfields']=nfields
+        data['modes']=mode
+        data['fractionGroup']=fractionGroup
+        data['cTime']={}
+        data['nrules']={}
+        data['nvnhs']={} 
+        data['mdsTime']={}
+        data['augmentTime']={}       
+        for ntot in nparts:
+            #ntot=nparts[0]
+            fg=fractionGroup[0]
+            k1=ntot
+            data['nvnhs'][k1]={}
+            data['mdsTime'][k1]={}
+            data['augmentTime'][k1]={}
+            data['cTime'][k1]={}
+            data['nrules'][k1]={}
+            for npfx in npfxes:
+                k2=npfx
+                data['nvnhs'][k1][k2]=[]
+                data['mdsTime'][k1][k2]=[]
+                data['augmentTime'][k1][k2]=[]
+                data['cTime'][k1][k2]=[]
+                data['nrules'][k1][k2]=[]
+                
+                for dp in range(dataPoints):
+                    print "iteration: ",dp+1
+                    q=Queue()
+                    p=Process(target=compilationTimeExperiment, args=(mode,ntot,npfx,nfields,fg,q))
+                    p.start()
+                    qout=q.get()
+                    p.join()
+                    augmentTime,mdsTime,nVNHs,nRules,compileTime=qout
+                    data['nvnhs'][k1][k2].append(nVNHs)
+                    data['mdsTime'][k1][k2].append(mdsTime)
+                    data['augmentTime'][k1][k2].append(augmentTime)
+                    data['cTime'][k1][k2].append(compileTime)
+                    data['nrules'][k1][k2].append(nRules)
+                    
+        with open(dname, 'w') as outfile:
+            json.dump(data,outfile,ensure_ascii=True,encoding="ascii")          
+        print data
+        
+        
+        
     elif option=='MDS':
         data={}
         print 'Running Prefix Benchmarking Experiment'
@@ -109,7 +172,7 @@ def main(option):
         #modes=['dlsm','lsm','naive']
         #nparts=[20,40,80,160]
         #modes=['dlsm','lsm']
-        nparts=[100,200,300,500]
+        nparts=[100,200,300,400,500]
         npfxes=[2500,5000,7500,10000]
         #fractionGroup=[0.025,0.05,0.075,0.1]
         fractionGroup=[0.01]
@@ -123,19 +186,19 @@ def main(option):
         data['modes']=mode
         data['fractionGroup']=fractionGroup
         data['time']={}
-        data['#vnhs']={} 
+        data['nvnhs']={} 
         data['mdsTime']={}
         data['augmentTime']={}       
         for ntot in nparts:
             #ntot=nparts[0]
             fg=fractionGroup[0]
             k1=ntot
-            data['#vnhs'][k1]={}
+            data['nvnhs'][k1]={}
             data['mdsTime'][k1]={}
             data['augmentTime'][k1]={}
             for npfx in npfxes:
                 k2=npfx
-                data['#vnhs'][k1][k2]=[]
+                data['nvnhs'][k1][k2]=[]
                 data['mdsTime'][k1][k2]=[]
                 data['augmentTime'][k1][k2]=[]
                 
@@ -147,7 +210,7 @@ def main(option):
                     qout=q.get()
                     p.join()
                     augmentTime,mdsTime,nVNHs=qout
-                    data['#vnhs'][k1][k2].append(nVNHs)
+                    data['nvnhs'][k1][k2].append(nVNHs)
                     data['mdsTime'][k1][k2].append(mdsTime)
                     data['augmentTime'][k1][k2].append(augmentTime)
                     

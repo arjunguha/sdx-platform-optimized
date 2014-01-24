@@ -71,7 +71,7 @@ def update_bgp(sdx,advertisers,nprefixes,ntot):
     if uniformRIB==True:
         #print "uniform"
         ebgp_nh_received={}
-        biasFactor=9 # probability of selecting top advertiser is 9 time that of others
+        biasFactor=100 # probability of selecting top advertiser is 9 time that of others
         for prefix in sdx.prefixes:
             tmp=[]
             for elem in prefix_2_part[prefix]:
@@ -789,7 +789,7 @@ def main(argv):
     fmult=0.05  # fraction of participants with multiple ports
     nmult=int(ntot*fmult)
     nports=2 # number of ports for the participants with multiple ports 
-    nprefixes=500 # total # of prefixes
+    nprefixes=3000 # total # of prefixes
     fractionGroup=0.01 # fraction of prefix groups wrt total prefixes
     
     #Np=100 #total number of prefixes
@@ -818,7 +818,7 @@ def main(argv):
     vnh_assignment(sdx,participants)
     print "Policy Augmentation: ",time.time()-start
     compile_Policies(participants)
-
+    
     start=time.time()
     nRules,compileTime=disjointCompose(sdx)
     print nRules,compileTime
