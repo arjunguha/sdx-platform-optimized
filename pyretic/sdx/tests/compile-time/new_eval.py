@@ -15,18 +15,18 @@ def UPDATEDcompilationTimeExperiment(ntot,nprefixes,nfields,q=None):
     print "Starting the experiment with parameters: ",ntot,nprefixes,nfields,len(policy_parl)
     print '...'
     # define the parameters
-    ntot=80 # total number of participants
+    ntot=ntot # total number of participants
     fmult=0.05  # fraction of participants with multiple ports
     nmult=int(ntot*fmult)
     nports=2 # number of ports for the participants with multiple ports 
-    nprefixes=60 # total # of prefixes
+    nprefixes=nprefixes # total # of prefixes
     fractionGroup=0.1 # fraction of prefix groups wrt total prefixes
     
     #Np=100 #total number of prefixes
     advertisers=[(0.05,1),(0.15,0.20),(0.80,0.01)]
     partTypes=[0.05,0.15,0.05,0.75]
     frand=0.025
-    nfields=1
+    nfields=nfields
     nval=50
     
     
