@@ -6,10 +6,80 @@ Updated Script to evaluate the performance of different composition schemes
 """
 
 #from predicateBM import *
-from newPgen import *
+from PgenPset import *
 import os,json,sys
 import subprocess
 from multiprocessing import Process, Queue
+
+def updateBurstExperiment(mode,ntot,nprefixes,nfields,nUpdates,dataPoints=1,q=None):
+    print "Starting the experiment with parameters: ",mode,ntot,nprefixes,nUpdates,len(policy_parl)
+    print '...'
+        # define the parameters
+    ntot=ntot # total number of participants
+    fmult=0.05  # fraction of participants with multiple ports
+    nmult=int(ntot*fmult)
+    nports=2 # number of ports for the participants with multiple ports 
+    nprefixes=nprefixes # total # of prefixes
+    fractionGroup=0.1 # fraction of prefix groups wrt total prefixes
+    
+    #Np=100 #total number of prefixes
+    advertisers=[(0.05,1),(0.15,0.20),(0.80,0.01)]
+    partTypes=[0.05,0.15,0.05,0.75]
+    frand=0.025
+    nfields=nfields
+    nval=50
+    biasfactor=10
+    
+    
+    sdx_participants=generate_sdxglobal(ntot,nmult,nports) 
+       
+    (sdx,participants) = sdx_parse_config('sdx_global.cfg')
+    
+    update_paramters(sdx,ntot,nports)
+    #print sdx.participant_to_ebgp_nh_received    
+    update_bgp(sdx,advertisers,nprefixes,ntot)
+    sdx.pfxgrp=sdx.prefixes
+    generatePolicies(sdx,participants,ntot,nmult,partTypes,frand,nfields,nval,headerFields,fieldValues)
+    
+    
+    start=time.time()
+    vnh_assignment(sdx,participants)
+    print "Policy Augmentation: ",time.time()-start
+    
+    
+    compile_Policies(participants)
+    start=time.time()
+    nRules,compileTime=disjointCompose(sdx)
+    print nRules,compileTime
+    
+    # Get Compiler's cache size
+    s1=total_size(policy_parl,verbose=False)
+    s2=total_size(policy_seq,verbose=False)
+    s3=total_size(disjoint_cache,verbose=False)
+    cacheSize=s1+s2+s3
+    print "Cache sizes: ",cacheSize
+    
+    # Process BGP Updates
+    updateEval=True    
+    if updateEval==True:        
+        deltaRules={}
+        updateCompileTime={}
+        for up in nUpdates:         
+            
+            deltaRules[up]=[]
+            updateCompileTime[up]=[]       
+            for dp in range(dataPoints):
+                print "iteration: ",dp+1                       
+                nRules1,compileTime1=processBGPUpdateBurst(sdx,up,biasfactor,advertisers,ntot)
+                deltaRules[up].append(nRules1-nRules)
+                updateCompileTime[up].append(compileTime1)
+
+    if q==None:
+        return (nRules,compileTime,cacheSize,deltaRules,updateCompileTime)
+    else:
+        q.put((nRules,compileTime,cacheSize,deltaRules,updateCompileTime))
+
+            
 
 def compilationTimeExperiment(mode,ntot,nprefixes,nfields,fractionGroup,q=None):
     print "Starting the experiment with parameters: ",mode,ntot,nprefixes,nfields,fractionGroup,len(policy_parl)
@@ -113,5 +183,6 @@ def prefixGroupExperiment(mode,ntot,nprefixes,nfields,fractionGroup,q=None):
     
     
 if __name__ == '__main__':
-    augmentTime,mdsTime=prefixGroupExperiment('dlsm',500,800,1,0.01)
-    
+    #augmentTime,mdsTime=prefixGroupExperiment('dlsm',500,800,1,0.01)
+    nRules,compileTime,cacheSize,deltaRules,updateCompileTime=updateBurstExperiment('dlsm',40,10,1,[10,20,30,40,50])
+    print nRules,compileTime,cacheSize,deltaRules,updateCompileTime

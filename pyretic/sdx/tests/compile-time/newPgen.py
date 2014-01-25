@@ -355,7 +355,7 @@ def disjointReCompose(sdx,affectedVNH,newVNH):
         if tmp_policy1!=drop:
             disjointPolicies.append(tmp_policy1)
         """
-        if debug==True: print "Recompose Participant",participant.id_,participant.policiesRecompose
+        if debug==False: print "Recompose Participant",participant.id_,participant.policiesRecompose
         
         # get list of all participants to which it forwards
         fwdport=extract_all_forward_actions_from_policy(participant.policiesRecompose)
@@ -383,10 +383,11 @@ def disjointReCompose(sdx,affectedVNH,newVNH):
             #print participant.policies,peer.policies
             #tmp_policy1+=(match(dstmac=newVNH.values()[0])>>match_ports>>participant.policiesRecompose>>match_ports1>>peer.policiesRecompose>>match_ports1)
             #print tmp_policy1
-            tmp1=(match_ports>>participant.policies>>match_ports1>>peer.policies>>match_ports1)
+            tmp1=(match(dstmac=newVNH.values()[0])>>match_ports>>participant.policiesRecompose>>match_ports1>>peer.policiesRecompose>>match_ports1)
             if fullDisjoint==True:
                 tmp1=drop+tmp1
                 if tmp1!=drop:
+                    print tmp1,tmp1.compile()
                     disjointPolicies.append(tmp1)
             else:
                 tmp_policy1+=tmp1

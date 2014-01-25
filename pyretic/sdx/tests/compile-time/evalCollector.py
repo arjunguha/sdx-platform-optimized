@@ -51,8 +51,51 @@ def main(option):
     time_curr=strftime("%a%d%b%Y%H%M%S", gmtime())
     #print time_curr
     dname=option+'_'+str(time_curr)+'.dat'
+    if option=='bgpUpdate':
+        data={}
+        print 'Running Prefix Benchmarking Experiment'
+
+        nparts=[50,100,150]
+        #npfxes=[20,40,60,80,100]
+        npfxes=[50]
+        
+        nUpdates=[1,10,20,30,40,50]
+        nfields=1
+        mode='dlsm'
+        data['npfxes']=npfxes
+        data['nfields']=nfields
+        data['modes']=mode
+        data['nUpdates']=nUpdates
+        data['time']={}
+        data['nRules']={} 
+        data['deltaRules']={}
+        data['updateTime']={} 
+              
+        for ntot in nparts:
+            k1=ntot
+            nprefixes=npfxes[0]
+            data['time'][k1]={}
+            data['nRules'][k1]={} 
+            data['deltaRules'][k1]={}
+            data['updateTime'][k1]={} 
+               
+            q=Queue()
+            p=Process(target=updateBurstExperiment, args=(mode,ntot,nprefixes,nfields,nUpdates,dataPoints,q))
+            p.start()
+            qout=q.get()
+            p.join()
+            nRules,compileTime,cacheSize,deltaRules,updateCompileTime=qout
+            data['time'][k1]=(compileTime)
+            data['nRules'][k1]=(nRules)
+            data['deltaRules'][k1]=(deltaRules)
+            data['updateTime'][k1]=(updateCompileTime)
+                    
+            with open(dname, 'w') as outfile:
+                json.dump(data,outfile,ensure_ascii=True,encoding="ascii")          
+            print data
     
-    if option=='prefixBM':
+    
+    elif option=='prefixBM':
         data={}
         print 'Running Prefix Benchmarking Experiment'
 
