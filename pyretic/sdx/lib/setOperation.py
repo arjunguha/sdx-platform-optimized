@@ -341,9 +341,10 @@ def decompose_multi(part_2_prefix,q=None,index=0):
 
 
     
-def lcs_multiprocess(part_2_prefix,verify=True,sdx=None):
+def lcs_multiprocess(part_2_prefix,pfxgroup=False,sdx=None):
     start=time.time()
-    if verify==False:
+    if pfxgroup==True:
+        
         tmp=[]
         k=''
         for pg in sdx.prefixes.keys():
@@ -352,9 +353,10 @@ def lcs_multiprocess(part_2_prefix,verify=True,sdx=None):
         lcs={}
         lcs[k]=tmp
         
+        
     else:
         lcs=decompose_multi(part_2_prefix,index=1)     
-    print len(lcs.values()[0]),time.time()
+    print len(lcs.values()[0]),time.time()-start
     #print lcs
     part_2_prefix_updated={}
     # Todo: Try to parallelize this later

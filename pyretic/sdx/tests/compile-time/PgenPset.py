@@ -17,7 +17,8 @@ def getPrefixes(sdx,n):
     pfxes={}
     for i in range(n):
         # modify later to get real IP prefixes here
-        pfxes[(i+1)]=''
+        tmp='pg'+str(i+1)
+        pfxes[tmp]=[tmp]
     sdx.prefixes=pfxes
 
 def getPrefixAnnounced(k,sdx):
@@ -72,12 +73,12 @@ def update_bgp(sdx,advertisers,nprefixes,ntot):
     if uniformRIB==True:
         #print "uniform"
         ebgp_nh_received={}
-        biasFactor=100 # probability of selecting top advertiser is 9 time that of others
+        biasFactor=10 # probability of selecting top advertiser is 9 time that of others
         for prefix in sdx.prefixes:
             tmp=[]
             for elem in prefix_2_part[prefix]:
                 #print int(elem)
-                if int(elem)<=1: 
+                if int(elem)<=n1: 
                     # biasing the result in favor of only one top advertiser to 1 (hacky hack). This means that bias factor is in favor of only one top advertiser
                     for i in range(biasFactor*len(prefix_2_part[prefix])):
                         tmp.append(elem)                
@@ -812,7 +813,7 @@ def main(argv):
     fmult=0.05  # fraction of participants with multiple ports
     nmult=int(ntot*fmult)
     nports=2 # number of ports for the participants with multiple ports 
-    nprefixes=100 # total # of prefixes
+    nprefixes=20 # total # of prefixes
     fractionGroup=0.1 # fraction of prefix groups wrt total prefixes
     
     #Np=100 #total number of prefixes
@@ -827,22 +828,29 @@ def main(argv):
        
     (sdx,participants) = sdx_parse_config('sdx_global.cfg')
     # get pfx groups for writing SDX policies
-    sdx.pfxgrp=getPfxGroup(nprefixes,fractionGroup)
-    print sdx.pfxgrp
+    #sdx.pfxgrp=getPfxGroup(nprefixes,fractionGroup)
+    #print sdx.pfxgrp
     #print len(sdx.pfxgrp.keys())
-    update_paramters(sdx,ntot,nports)    
-    update_bgp(sdx,advertisers,nprefixes,ntot) 
+    
+    update_paramters(sdx,ntot,nports)
+    #print sdx.participant_to_ebgp_nh_received    
+    update_bgp(sdx,advertisers,nprefixes,ntot)
+    sdx.pfxgrp=sdx.prefixes
+    #print sdx.participant_to_ebgp_nh_received 
     
     #print sdx.prefix_2_part
       
     
     
     generatePolicies(sdx,participants,ntot,nmult,partTypes,frand,nfields,nval,headerFields,fieldValues)
+    
+    
     start=time.time()
     vnh_assignment(sdx,participants)
     print "Policy Augmentation: ",time.time()-start
-    compile_Policies(participants)
     
+    
+    compile_Policies(participants)
     start=time.time()
     nRules,compileTime=disjointCompose(sdx)
     print nRules,compileTime
@@ -850,8 +858,8 @@ def main(argv):
     s2=total_size(policy_seq, verbose=False)
     s3=total_size(disjoint_cache, verbose=False)
     print "Cache sizes: ",s1,s2,s3,s1+s2+s3
-
-    updateEval=False
+    
+    updateEval=True
     if updateEval==True:
         # find the prefix to send update for
         print "Finding the right prefix"
@@ -862,35 +870,37 @@ def main(argv):
         pool=[]
         for peer in bp:
             if upPfx in bp[peer]:
-                print peer
+                #print peer
                 pool=sdx.prefix_2_part[upPfx]
-                print pool
+                #print pool
                 pool.remove(unicode(peer))
-        print pool
+        #print pool
         assert(len(pool)!=0)
         frac,x=advertisers[0]
         n1=int(frac*ntot)
         if n1==0:
             n1=1
         tmp=[]
-        biasfactor=9
+        biasfactor=10
         for elem in pool:
             if int(elem)<=n1:
                 for i in range(biasfactor*len(pool)):
                     tmp.append(elem)
             else:
                 tmp.append(elem)
-        print tmp
+        #print tmp
         nh=random.choice(tmp)
-        print "new NH: ",(nh)
+        print "new NH: ",(nh)," for prefix from the group: ",upPfx
         affectedVNH={}
         for vnh in sdx.VNH_2_pfx:
             if upPfx in sdx.VNH_2_pfx[vnh]:
                 print vnh,sdx.VNH_2_mac[vnh]
                 affectedVNH[vnh]=sdx.VNH_2_mac[vnh]
         # Get a new VNH
+        #print "lcs old: ",len(sdx.lcs_old),sdx.lcs_old
         count=len(sdx.lcs_old)+1
         vname='VNH'+str((count))
+        #print vname
         newMac={}
         newMac[vname] = MAC(str(EUI(int(EUI(VNH_2_mac['VNH']))+count)))
         
@@ -903,82 +913,8 @@ def main(argv):
             
         nRules,compileTime=disjointReCompose(sdx,affectedVNH,newMac)
         print nRules,compileTime
+    
 
-        """
-        for part in sdx.participants:
-            sdx.participant_to_ebgp_nh_received[part.id_][upPfx]=nh
-            part.policies=part.original_policies
-        sdx.best_paths = get_bestPaths(sdx.participant_to_ebgp_nh_received)
-        print upPfx in sdx.best_paths[unicode(1)][nh]
-        """
-        
-        #vnh_assignment(sdx,participants)
-        
-        # Update the ebgpnh
-                
-                
-                
-        # Select a new NH for this prefix
-        
-        
-        """
-        # Assign it a new VNH
-        lcs=sdx.lcs_old
-        vname='VNH'+str((len(sdx.lcs_old)+1))
-        print vname
-        print len(lcs)
-        lcs.remove(pset_orig)
-        pset1=pset_orig.difference(set([upPfx]))
-        pset2=set([upPfx])
-        lcs.append(pset1)
-        lcs.append(pset2)
-        print len(lcs)
-        
-        #print sdx.VNH_2_pfx
-        """
-        
-        # Augment the policies as usual
-        
-        # compose and compile the policy
-        
-    """
-    print "Total compose time: ",time.time()-start
-    
-    nRules,compileTime=disjointCompose(sdx)
-    print nRules,compileTime
-    
-    # top advertisers policy changes
-    #changePartPolicy(sdx)
-    
-    
-    
-    part_2_fwd=getFwd(sdx)
-    print part_2_fwd
-    
-    
-    pfx_2_grp=generate_pfxgrpmappings(sdx,nprefixes,Np)
-    
-    # Prefix for which BGP Update received
-    aPrefix=random.choice(range(1,Np+1))
-    # Peer who announced this BGP Update
-    # We will consider prefixes only from the top advertisers
-    n1,x=advertisers[0]
-    n1=int(n1*ntot)
-    if n1==0:
-        n1=1
-    aPeer=random.choice(range(1,n1+1))
-    print aPeer
-    start=time.time()
-    # Prefix group to which this prefix belongs
-    pfxGrp=findPfxgroup(aPrefix,pfx_2_grp)
-    print pfxGrp,time.time()-start
-    
-    
-    # We know that this step is very small and is not a bottleneck for sure.
-    # We now need to run best path for list of participants for which we have
-    # outbound policies, these participants in our case are top advertisers. 
-    
-    """
 
 def getUpdatePfx(sdx):
     tmp={}

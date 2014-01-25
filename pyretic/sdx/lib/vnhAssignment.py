@@ -516,8 +516,9 @@ def vnh_assignment(sdx, participants):
     # Step 2 & 3
     start=time.time()
     if debug==True: print 'Before Set operations: ', participant_2_prefix
+    pfxgrp=True
     if pfxgrp==True:
-        part_2_prefix_updated, lcs = lcs_multiprocess(participant_2_prefix,verify,sdx)
+        part_2_prefix_updated, lcs = lcs_multiprocess(participant_2_prefix,pfxgrp,sdx)
     elif pfxgrp==False:
         part_2_prefix_updated, lcs = lcs_multiprocess(participant_2_prefix)  
     else:
@@ -527,6 +528,7 @@ def vnh_assignment(sdx, participants):
     nVNHs=len(lcs)
     print "MDS time: ",mdsTime
     sdx.part_2_prefix_lcs = part_2_prefix_updated
+    #print "After MDS: ",len(lcs),lcs
     sdx.lcs_old = lcs
         
     #----------------------------------------------------------------------------------------------------#
@@ -538,7 +540,7 @@ def vnh_assignment(sdx, participants):
     step4(lcs,part_2_VNH,VNH_2_pfx,VNH_2_IP,VNH_2_mac,part_2_prefix_updated)
     #if debug==True: print "After new assignment",len(VNH_2_pfx)                    
     #if debug==True: print part_2_VNH[unicode(1)]
-    #if debug==True: print VNH_2_pfx
+    if debug==True: print VNH_2_pfx
     #if debug==True: print VNH_2_IP
     #if debug==True: print VNH_2_mac
     sdx.VNH_2_pfx=VNH_2_pfx
