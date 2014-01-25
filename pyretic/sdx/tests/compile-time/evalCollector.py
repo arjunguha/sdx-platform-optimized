@@ -11,7 +11,7 @@ import subprocess
 from multiprocessing import Process, Queue
 from time import gmtime, strftime
 
-dataPoints=20
+dataPoints=4
 recursionLimit=100000
 
 def getKey(ntot,npfx):
@@ -51,6 +51,65 @@ def main(option):
     time_curr=strftime("%a%d%b%Y%H%M%S", gmtime())
     #print time_curr
     dname=option+'_'+str(time_curr)+'.dat'
+    
+    if option=='UPDATEDcompileTime':
+        data={}
+        print 'Running Compilation Time Experiment'
+
+        #modes=['dlsm','lsm','naive']
+        #nparts=[20,40,80,160]
+        #modes=['dlsm','lsm']
+        nparts=[50,100,150]
+        npfxes=[25,50,75,100]
+        #npfx=10
+        nfields=1
+        mode='dlsm'
+        #data['partpfx']=partpfx
+        data['nparts']=nparts
+        data['npfxes']=npfxes
+        data['nfields']=nfields
+        data['modes']=mode
+        data['cTime']={}
+        data['nrules']={}
+        data['nvnhs']={} 
+        data['cacheSize']={}
+        data['augmentTime']={}       
+        for ntot in nparts:
+
+            k1=ntot
+            data['nvnhs'][k1]={}
+            data['cacheSize'][k1]={}
+            data['augmentTime'][k1]={}
+            data['cTime'][k1]={}
+            data['nrules'][k1]={}
+            for npfx in npfxes:
+                k2=npfx
+                data['nvnhs'][k1][k2]=[]
+                data['cacheSize'][k1][k2]=[]
+                data['augmentTime'][k1][k2]=[]
+                data['cTime'][k1][k2]=[]
+                data['nrules'][k1][k2]=[]
+                
+                for dp in range(dataPoints):
+                    print "iteration: ",dp+1
+                    q=Queue()
+                    p=Process(target=UPDATEDcompilationTimeExperiment, args=(ntot,npfx,nfields,q))
+                    p.start()
+                    qout=q.get()
+                    p.join()
+                    nRules,augmentTime,compileTime,cacheSize=qout
+ 
+                    data['cacheSize'][k1][k2].append(cacheSize)
+                    data['augmentTime'][k1][k2].append(augmentTime)
+                    data['cTime'][k1][k2].append(compileTime)
+                    data['nrules'][k1][k2].append(nRules)
+                    
+            with open(dname, 'w') as outfile:
+                json.dump(data,outfile,ensure_ascii=True,encoding="ascii")          
+            print data
+        
+        
+        
     if option=='bgpUpdate':
         data={}
         print 'Running Prefix Benchmarking Experiment'

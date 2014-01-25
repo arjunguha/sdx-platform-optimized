@@ -31,7 +31,8 @@ def main(option):
     #dname='MDS_Fri24Jan2014051146.dat' 
     #dname='MDS_Fri24Jan2014060412.dat'
     #dname='mdsTrace_Sat25Jan2014032939.dat' 
-    dname='bgpUpdate_Sat25Jan2014101855.dat'
+    #dname='bgpUpdate_Sat25Jan2014101855.dat'
+    dname='bgpUpdate_Sat25Jan2014114145.dat'
     if option=='bgpUpdate':
         print "plotting "+str(option)+" result"
         #dname="composeBM_matapan.dat"
@@ -56,7 +57,7 @@ def main(option):
                 for hdr in sorted(v.iterkeys()):
                     print hdr,v[hdr]
                     #formating error hack
-                    v[hdr]=[v[hdr][0][0],v[hdr][1][0]]
+                    #v[hdr]=[v[hdr][0][0],v[hdr][1][0]]
                     print v[hdr]
                     total, average, median, standard_deviation, minimum, maximum, confidence=stats(v[hdr])
                     print median,standard_deviation
@@ -79,7 +80,7 @@ def main(option):
             for k in leg:
                 #leg.append(float(k))
                 
-                legnd.append('N= '+str(int(k)))
+                legnd.append('#Participants='+str(int(k))+'')
                 a=data[param][k]['median']
                 v=data[param][k]
                 err=data[param][k]['stddev']
@@ -103,15 +104,15 @@ def main(option):
             for tick in ax.yaxis.get_major_ticks():
                 tick.label.set_fontsize(24)
             leg.sort() 
-            pl.legend((p),legnd,'upper left',prop={'size':32})
+            pl.legend((p),legnd,'upper left',prop={'size':24})
             pl.xlabel('# BGP Updates',fontsize=32)
             if param=='deltaRules':
                 pl.ylabel('# deltaRules',fontsize=32)
-                #pl.xlim(0,10000+100)
-                #ax.set_ylim(ymin=1)
+                pl.xlim(0,51)
+                ax.set_ylim(ymin=1)
             elif param=='updateTime':
                 pl.ylabel('Time(seconds)',fontsize=32)
-                #pl.xlim(0,10000+100)
+                pl.xlim(0,51)
                 #ax.set_ylim(ymin=1)
 
                 
@@ -166,7 +167,8 @@ def main(option):
             for k in leg:
                 #leg.append(float(k))
                 
-                legnd.append('N= '+str(int(k)))
+                #legnd.append('N= '+str(int(k)))
+                legnd.append('#Participants='+str(int(k))+'')
                 a=data[param][k]['median']
                 v=data[param][k]
                 err=data[param][k]['stddev']
@@ -190,7 +192,7 @@ def main(option):
             for tick in ax.yaxis.get_major_ticks():
                 tick.label.set_fontsize(24)
             leg.sort() 
-            pl.legend((p),legnd,'upper left',prop={'size':32})
+            pl.legend((p),legnd,'upper left',prop={'size':24})
             pl.xlabel('# Prefixes',fontsize=32)
             if param=='nvnhs':
                 pl.ylabel('# Prefix Groups',fontsize=32)

@@ -69,7 +69,8 @@ class SDXParticipant(object):
         self.peers = peers
         self.policies = policies 
         self.original_policies=None
-        self.policiesRecompose=[]       
+        self.policiesRecompose=[]  
+        self.decomposedPolicies={}     
         self.vport.participant = self ## set the participant
         self.n_policies=0
         self.rib=rib
