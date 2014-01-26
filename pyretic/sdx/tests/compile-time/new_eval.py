@@ -63,7 +63,7 @@ def UPDATEDcompilationTimeExperiment(ntot,nprefixes,nfields,q=None):
         augmentTime2=0
         nRules,compileTime=disjointCompose(sdx)
     print nRules,compileTime,augmentTime1,augmentTime2
-    augmentTime=augmentTime2+augmentTime1
+    augmentTime=float(augmentTime2)/len(sdx.VNH_2_IP.keys())+augmentTime1
     
     # Get Compiler's cache size
     s1=total_size(policy_parl,verbose=False)

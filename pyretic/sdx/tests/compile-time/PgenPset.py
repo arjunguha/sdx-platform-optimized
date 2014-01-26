@@ -344,7 +344,7 @@ def ddisjointCompose(sdx):
     else:
         for vnh in VNHs:
             if vnh!='VNH':
-                print "Augmenting for mac: ",vnh
+                #print "Augmenting for mac: ",vnh
                 affectedVNH={}
                 affectedVNH[vnh]=sdx.VNH_2_mac[vnh]
                 decomp[vnh]=processVNH(sdx,affectedVNH,vnh)
@@ -376,7 +376,7 @@ def processVNH_MULTI(participants,affectedVNH,vnh,q=None):
         #part.decomposedPolicies[vnh]=tmp
         decomp[part.id_]=copyPolicy(tmp)
         
-    print "Traversing for this VNH takes time=",time.time()-start1
+    #print "Traversing for this VNH takes time=",time.time()-start1
     if q!=None:
             q.put(decomp)
             if (debug==True): print "Put operation completed", mp.current_process()
@@ -420,7 +420,7 @@ def processVNH(sdx,affectedVNH,vnh):
         part.decomposedPolicies[vnh]=tmp
         decomp[part.id_]=tmp
         
-    print "Traversing for this VNH takes time=",time.time()-start1
+    #print "Traversing for this VNH takes time=",time.time()-start1
     return decomp  
 
   
@@ -1042,16 +1042,16 @@ def traverse(policy,affectedVNH,newVNH):
 
 def main(argv):
     # define the parameters
-    ntot=40 # total number of participants
+    ntot=400 # total number of participants
     fmult=0.05  # fraction of participants with multiple ports
     nmult=int(ntot*fmult)
     nports=2 # number of ports for the participants with multiple ports 
-    nprefixes=10 # total # of prefixes
+    nprefixes=1000 # total # of prefixes
     fractionGroup=0.1 # fraction of prefix groups wrt total prefixes
     
     #Np=100 #total number of prefixes
-    advertisers=[(0.05,1),(0.15,0.20),(0.80,0.01)]
-    partTypes=[0.05,0.15,0.05,0.75]
+    advertisers=[(0.1,1),(0.05,0.20),(0.85,0.01)]
+    partTypes=[0.1,0.05,0.1,0.75]
     frand=0.025
     nfields=1
     nval=50

@@ -59,8 +59,8 @@ def main(option):
         #modes=['dlsm','lsm','naive']
         #nparts=[20,40,80,160]
         #modes=['dlsm','lsm']
-        nparts=[50,100,150]
-        npfxes=[25,50,75,100]
+        nparts=[100,200,300,400]
+        npfxes=[200,400,600,800,1000]
         #npfx=10
         nfields=1
         mode='dlsm'
