@@ -60,7 +60,7 @@ def main(option):
         #nparts=[20,40,80,160]
         #modes=['dlsm','lsm']
         nparts=[200,300,400]
-        npfxes=[200,400,600,800,1000]
+        npfxes=[400,600,800,1000]
         #npfxes=[10,20]
         nfields=1
         mode='dlsm'
@@ -155,6 +155,9 @@ def main(option):
             with open(dname, 'w') as outfile:
                 json.dump(data,outfile,ensure_ascii=True,encoding="ascii")
             print data
+            msg='MATTAPAN: Completed Update Burst for '+str(ntot)+' participants '+str(npfx)
+
+            send_email(msg)
 
 
     elif option=='prefixBM':

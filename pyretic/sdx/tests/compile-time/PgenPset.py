@@ -344,7 +344,7 @@ def ddisjointCompose(sdx):
     else:
         for vnh in VNHs:
             if vnh!='VNH':
-                #print "Augmenting for mac: ",vnh
+                print "Augmenting for mac: ",vnh
                 affectedVNH={}
                 affectedVNH[vnh]=sdx.VNH_2_mac[vnh]
                 decomp[vnh]=processVNH(sdx,affectedVNH,vnh)
@@ -420,7 +420,7 @@ def processVNH(sdx,affectedVNH,vnh):
         part.decomposedPolicies[vnh]=tmp
         decomp[part.id_]=tmp
         
-    #print "Traversing for this VNH takes time=",time.time()-start1
+    print "Traversing for this VNH takes time=",time.time()-start1
     return decomp  
 
   
@@ -1179,7 +1179,7 @@ def main(argv):
     
     #Np=100 #total number of prefixes
     advertisers=[(0.1,1),(0.05,0.20),(0.85,0.01)]
-    partTypes=[0.1,0.05,0.1,0.75]
+    partTypes=[0.15,0.05,0.05,0.75]
     frand=0.025
     nfields=1
     nval=50
