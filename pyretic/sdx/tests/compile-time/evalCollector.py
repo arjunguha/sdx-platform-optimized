@@ -11,7 +11,7 @@ import subprocess
 from multiprocessing import Process, Queue
 from time import gmtime, strftime
 
-dataPoints=20
+dataPoints=10
 recursionLimit=100000
 
 def getKey(ntot,npfx):
@@ -21,9 +21,9 @@ def send_email(option):
     import smtplib
     import datetime
     current_time = datetime.datetime.now().time()
-
+    
     gmail_user = "glex.qsd@gmail.com"
-    gmail_pwd = "****"
+    gmail_pwd = "***"
     FROM = 'glex.qsd@@gmail.com'
     TO = ['glex.qsd@gmail.com'] #must be a list
     
@@ -59,8 +59,8 @@ def main(option):
         #modes=['dlsm','lsm','naive']
         #nparts=[20,40,80,160]
         #modes=['dlsm','lsm']
-        nparts=[100]
-        npfxes=[200,400]
+        nparts=[100,200,300,400]
+        npfxes=[200,400,600,800,1000]
         #npfx=10
         nfields=1
         mode='dlsm'
@@ -104,9 +104,12 @@ def main(option):
                     data['cTime'][k1][k2].append(compileTime)
                     data['nrules'][k1][k2].append(nRules)
                     
-            with open(dname, 'w') as outfile:
-                json.dump(data,outfile,ensure_ascii=True,encoding="ascii")          
-            print data
+                with open(dname, 'w') as outfile:
+                    json.dump(data,outfile,ensure_ascii=True,encoding="ascii")          
+                print data
+                msg='Completed Init Compile for '+str(ntot)+' participants '+str(npfx)+' prefix sets'
+                
+                send_email(msg)
         
         
         
