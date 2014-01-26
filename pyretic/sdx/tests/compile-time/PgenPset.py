@@ -328,7 +328,7 @@ def ddisjointCompose(sdx):
         i=0
         for vnh in VNHs:
             if vnh!='VNH':
-                print "Augmenting for mac: ",vnh
+                #print "Augmenting for mac: ",vnh
                 affectedVNH={}
                 affectedVNH[vnh]=sdx.VNH_2_mac[vnh]
                 queue.append(Queue()) 
@@ -429,7 +429,7 @@ def disjointDeCompose(sdx):
     disjointPolicies=[]
     lowerPolicies=[]
     fullDisjoint=True
-    if debug==True: print "disjointReCompose called",affectedVNH.values()[0]
+    if debug==True: print "disjointDeCompose called",affectedVNH.values()[0]
     # take into consideration the participants with inbound policies
     # They need to be assigned lower priority than the rules matching the inport fields
     for participant in sdx.participants:
@@ -505,12 +505,140 @@ def disjointDeCompose(sdx):
     dclassifier=dPolicy.compile()
     if debug==True: print dclassifier
     nRules=len(dclassifier)
+    
+    # Save the SDX's Classifier rules
+    
+    
+    
     if debug==True: print nRules
     compileTime=time.time() - start_comp
     if debug==True: print  'Completed Disjoint Compilation ',compileTime, "seconds"
     return nRules,compileTime     
     
+def disjointDeReCompose(sdx,affectedVNHs,newVNHs):
+    disjointPolicies=[]
+    lowerPolicies=[]
+    fullDisjoint=True
+    """
+    if debug==True: print "disjointDeReCompose called",affectedVNH.values()[0]
+    # take into consideration the participants with inbound policies
+    # They need to be assigned lower priority than the rules matching the inport fields
+    for participant in sdx.participants:
+        if (isDefault(sdx,participant)==False):
+            
+            match_ports1=no_packets
+            for tmp in sdx.participant_2_port[participant.id_][participant.id_]:
+                 match_ports1|=match(outport=tmp)            
+            match_ports1.policies=filter(lambda x:x!=drop,match_ports1.policies)
+            selfPorts=sdx.participant_2_port[participant.id_][participant.id_]
+            inboundPolicy=removeDefault(participant.policies)
+            #print "After removing default: ",participant.id_,inboundPolicy
+            inboundPolicy=simplifyInbound(selfPorts,inboundPolicy)
+            #print "After simplification",inboundPolicy
+            tmp_policy=match_ports1>>inboundPolicy>>match_ports1
+            lowerPolicies.append(tmp_policy)
+            #print "participant: ",participant.id_," non-default identified", tmp_policy.compile()
+    
+    # for now ignore the inbound policies
+    #lowerPolicies=[]   
+    """ 
+    for participant in sdx.participants:
+        """
+        if debug==True: print "Recompose Participant",participant.id_,participant.policiesRecompose
+        
+        for vnh in participant.decomposedPolicies:
+            #print "Composing policies for update#: ",ind," for participant: ",participant.id_
+            fwdport=extract_all_forward_actions_from_policy(participant.decomposedPolicies[vnh])
+            # Remove participant's own ports from the fwdport list        
+            fwdport=filter(lambda port: port not in sdx.participant_2_port[participant.id_][participant.id_],fwdport)
+            tmp_policy1=drop    
+            for port in fwdport:
+                peer_id=sdx.port_2_participant[int(port)] # Name of fwding participant
+                peer=sdx.participants_dict[peer_id] # Instance of fwding participant
+                
+                if debug==True: print "2 Seq compiling policies of part: ",participant.id_," with peer: ",peer_id
+                match_ports=no_packets
+                for tmp in sdx.participant_2_port[participant.id_][participant.id_]:
+                     match_ports|=match(inport=tmp)            
+                match_ports.policies=filter(lambda x:x!=drop,match_ports.policies)
+                
+                match_ports1=no_packets
+                for tmp in sdx.participant_2_port[peer_id][peer_id]:
+                     match_ports1|=match(outport=tmp)            
+                match_ports1.policies=filter(lambda x:x!=drop,match_ports1.policies)
+                #print ind,newVNHs[ind],len(participant.policiesRecompose)
+                tmp1=(match(dstmac=sdx.VNH_2_mac[vnh])>>match_ports>>participant.decomposedPolicies[vnh]>>match_ports1>>peer.decomposedPolicies[vnh]>>match_ports1)
+                if fullDisjoint==True:
+                    tmp1=drop+tmp1
+                    if tmp1!=drop:
+                        #print tmp1
+                        #print tmp1.compile()
+                        disjointPolicies.append(tmp1)
+                else:
+                    tmp_policy1+=tmp1
+                    #print tmp_policy
+            
+            
+                
+                
+            if fullDisjoint==False:
+                if tmp_policy1!=drop:
+                    disjointPolicies.append(tmp_policy1)   
+        """
+        if debug==True: print "Recompose Participant",participant.id_,participant.policiesRecompose
+        
+        for ind in range(len(participant.policiesRecompose)):
+            #print "Composing policies for update#: ",ind," for participant: ",participant.id_
+            fwdport=extract_all_forward_actions_from_policy(participant.policiesRecompose[ind])
+            # Remove participant's own ports from the fwdport list        
+            fwdport=filter(lambda port: port not in sdx.participant_2_port[participant.id_][participant.id_],fwdport)
+            tmp_policy1=drop    
+            for port in fwdport:
+                peer_id=sdx.port_2_participant[int(port)] # Name of fwding participant
+                peer=sdx.participants_dict[peer_id] # Instance of fwding participant
+                
+                if debug==True: print "2 Seq compiling policies of part: ",participant.id_," with peer: ",peer_id
+                match_ports=no_packets
+                for tmp in sdx.participant_2_port[participant.id_][participant.id_]:
+                     match_ports|=match(inport=tmp)            
+                match_ports.policies=filter(lambda x:x!=drop,match_ports.policies)
+                
+                match_ports1=no_packets
+                for tmp in sdx.participant_2_port[peer_id][peer_id]:
+                     match_ports1|=match(outport=tmp)            
+                match_ports1.policies=filter(lambda x:x!=drop,match_ports1.policies)
+                #print ind,newVNHs[ind],len(participant.policiesRecompose)
+                tmp1=(match(dstmac=newVNHs[ind].values()[0])>>match_ports>>participant.policiesRecompose[ind]>>match_ports1>>peer.policiesRecompose[ind]>>match_ports1)
+                if fullDisjoint==True:
+                    tmp1=drop+tmp1
+                    if tmp1!=drop:
+                        #print tmp1
+                        #print tmp1.compile()
+                        disjointPolicies.append(tmp1)
+                else:
+                    tmp_policy1+=tmp1
+                    #print tmp_policy
+            
+            
+                
+                
+            if fullDisjoint==False:
+                if tmp_policy1!=drop:
+                    disjointPolicies.append(tmp_policy1)   
 
+
+            
+    dPolicy=disjoint(disjointPolicies,lowerPolicies)
+    if debug==True: print "Compile the disjoint policies"
+    start_comp=time.time()
+    dclassifier=dPolicy.compile()
+    if debug==True: print dclassifier
+    nRules=len(dclassifier)
+    if debug==True: print nRules
+    compileTime=time.time() - start_comp
+    if debug==True: print  'Completed Disjoint Compilation ',compileTime, "seconds"
+    return nRules,compileTime     
+    
 
 def disjointReCompose(sdx,affectedVNHs,newVNHs):
     disjointPolicies=[]
@@ -1042,11 +1170,11 @@ def traverse(policy,affectedVNH,newVNH):
 
 def main(argv):
     # define the parameters
-    ntot=400 # total number of participants
+    ntot=200 # total number of participants
     fmult=0.05  # fraction of participants with multiple ports
     nmult=int(ntot*fmult)
     nports=2 # number of ports for the participants with multiple ports 
-    nprefixes=1000 # total # of prefixes
+    nprefixes=100 # total # of prefixes
     fractionGroup=0.1 # fraction of prefix groups wrt total prefixes
     
     #Np=100 #total number of prefixes
@@ -1084,8 +1212,7 @@ def main(argv):
     augmentTime1=time.time()-start
     print "Policy Augmentation: ",time.time()-start
     decompose=True
-    if decompose==True:
-        
+    if decompose==True:        
         nRules,compileTime,augmentTime2=ddisjointCompose(sdx)
     else:
         augmentTime2=0
@@ -1104,18 +1231,81 @@ def main(argv):
     s3=total_size(disjoint_cache,verbose=False)
     cachSize=s1+s2+s3
     print "Cache sizes: ",cachSize
-    
-    # Process BGP Updates
-    updateEval=False    
-    if updateEval==True:        
-        nUpdates=100
-        biasfactor=10
-        nRules1,compileTime1=processBGPUpdateBurst(sdx,nUpdates,biasfactor)
-        
-        
     """
+    # Process BGP Updates
+    updateEval=True    
+    if updateEval==True:        
+        nUpdates=1
+        biasfactor=10
+        nRules1,compileTime1=addVNH(sdx,nUpdates,biasfactor,advertisers,ntot)
+        
+        
+    
 
-
+def addVNH(sdx,nUpdates,biasfactor,advertisers,ntot):
+    affectedVNHs=[]
+    newMacs=[]
+    print "# of updates: ",nUpdates
+    for ind in range(nUpdates):
+        # find the prefix to send update for
+        #print "Finding the right prefix"
+        upPfx,pset_orig=getUpdatePfx(sdx) 
+        #print upPfx           
+        bp=sdx.best_paths[unicode(1)]
+        pool=[]
+        removed=0
+        for peer in bp:
+            if upPfx in bp[peer]:
+                pool=sdx.prefix_2_part[upPfx]
+                removed=unicode(peer)
+                pool.remove(unicode(peer))
+        # Ensure that there is choice in case of withdraw message
+        assert(len(pool)!=0)
+        
+        frac,x=advertisers[0]
+        n1=int(frac*ntot)
+        if n1==0:
+            n1=1
+        tmp=[]
+        for elem in pool:
+            if int(elem)<=n1:
+                for i in range(biasfactor*len(pool)):
+                    tmp.append(elem)
+            else:
+                tmp.append(elem)
+        nh=random.choice(tmp)
+        sdx.prefix_2_part[upPfx].append(removed)
+        #print "new NH: ",(nh)," for prefix from the group: ",upPfx
+        
+        # Find the affected VNH
+        affectedVNH={}
+        for vnh in sdx.VNH_2_pfx:
+            if upPfx in sdx.VNH_2_pfx[vnh]:
+                #print vnh,sdx.VNH_2_mac[vnh]
+                affectedVNH[vnh]=sdx.VNH_2_mac[vnh]
+        
+        # Get a new VNH
+        count=len(sdx.lcs_old)+1+ind
+        vname='VNH'+str((count))
+        newMac={}
+        newMac[vname] = MAC(str(EUI(int(EUI(VNH_2_mac['VNH']))+count)))
+        
+        newMacs.append(newMac)
+        affectedVNHs.append(affectedVNH)
+        
+        for part in sdx.participants:
+            if ind==0:
+                part.policiesRecompose=[]
+            #print part.id_,part.decomposedPolicies[affectedVNH.keys()[0]]
+            tmp=traverse(part.decomposedPolicies[affectedVNH.keys()[0]],affectedVNH,newMac)
+            #print part.id_,tmp
+            part.policiesRecompose.append(tmp)
+            #print tmp.compile()
+    #print newMacs  
+    nRules,compileTime=disjointDeReCompose(sdx,affectedVNHs,newMacs)
+    print nRules,compileTime
+    return nRules,compileTime
+    
 
 def processBGPUpdateBurst(sdx,nUpdates,biasfactor,advertisers,ntot):
     affectedVNHs=[]

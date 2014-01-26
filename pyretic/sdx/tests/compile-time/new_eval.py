@@ -14,6 +14,7 @@ from multiprocessing import Process, Queue
 def UPDATEDcompilationTimeExperiment(ntot,nprefixes,nfields,q=None):
     print "Starting the experiment with parameters: ",ntot,nprefixes,nfields,len(policy_parl)
     print '...'
+    startexp=time.time()
     # define the parameters
     ntot=ntot # total number of participants
     fmult=0.05  # fraction of participants with multiple ports
@@ -70,7 +71,7 @@ def UPDATEDcompilationTimeExperiment(ntot,nprefixes,nfields,q=None):
     s2=total_size(policy_seq,verbose=False)
     s3=total_size(disjoint_cache,verbose=False)
     cacheSize=s1+s2+s3
-    
+    print "Iteration completed in: ",time.time()-startexp
     if q==None:
         return (nRules,augmentTime,compileTime,cacheSize)
     else:
@@ -115,7 +116,7 @@ def updateBurstExperiment(mode,ntot,nprefixes,nfields,nUpdates,dataPoints=1,q=No
     
     compile_Policies(participants)
     start=time.time()
-    nRules,compileTime=disjointCompose(sdx)
+    nRules,compileTime,augmentTime2=ddisjointCompose(sdx)
     print nRules,compileTime
     
     # Get Compiler's cache size
@@ -136,8 +137,9 @@ def updateBurstExperiment(mode,ntot,nprefixes,nfields,nUpdates,dataPoints=1,q=No
             updateCompileTime[up]=[]       
             for dp in range(dataPoints):
                 print "iteration: ",dp+1                       
-                nRules1,compileTime1=processBGPUpdateBurst(sdx,up,biasfactor,advertisers,ntot)
-                deltaRules[up].append(nRules1-nRules)
+                nRules1,compileTime1=addVNH(sdx,up,biasfactor,advertisers,ntot)
+                #deltaRules[up].append(nRules1-nRules)
+                deltaRules[up].append(nRules1)
                 updateCompileTime[up].append(compileTime1)
 
     if q==None:

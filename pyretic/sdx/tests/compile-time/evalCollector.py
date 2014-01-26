@@ -11,7 +11,7 @@ import subprocess
 from multiprocessing import Process, Queue
 from time import gmtime, strftime
 
-dataPoints=4
+dataPoints=20
 recursionLimit=100000
 
 def getKey(ntot,npfx):
@@ -59,8 +59,8 @@ def main(option):
         #modes=['dlsm','lsm','naive']
         #nparts=[20,40,80,160]
         #modes=['dlsm','lsm']
-        nparts=[100,200,300,400]
-        npfxes=[200,400,600,800,1000]
+        nparts=[100]
+        npfxes=[200,400]
         #npfx=10
         nfields=1
         mode='dlsm'
@@ -114,9 +114,9 @@ def main(option):
         data={}
         print 'Running Prefix Benchmarking Experiment'
 
-        nparts=[50,100,150]
+        nparts=[100,200,300,400]
         #npfxes=[20,40,60,80,100]
-        npfxes=[50]
+        npfxes=[500]
         
         nUpdates=[1,10,20,30,40,50]
         nfields=1
