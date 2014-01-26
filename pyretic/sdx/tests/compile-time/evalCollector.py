@@ -117,7 +117,7 @@ def main(option):
         data={}
         print 'Running Prefix Benchmarking Experiment'
 
-        nparts=[100,200,300,400]
+        nparts=[200]
         #npfxes=[20,40,60,80,100]
         npfxes=[500]
 

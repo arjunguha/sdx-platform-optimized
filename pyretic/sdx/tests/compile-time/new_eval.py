@@ -162,8 +162,8 @@ def compilationTimeExperiment(mode,ntot,nprefixes,nfields,fractionGroup,q=None):
     fractionGroup=fractionGroup # fraction of prefix groups wrt total prefixes
     
     #Np=100 #total number of prefixes
-    advertisers=[(0.05,1),(0.15,0.20),(0.80,0.01)]
-    partTypes=[0.05,0.15,0.05,0.75]
+    advertisers=[(0.1,1),(0.05,0.20),(0.85,0.01)]
+    partTypes=[0.15,0.05,0.05,0.75]
     frand=0.025
     nfields=nfields
     nval=50
