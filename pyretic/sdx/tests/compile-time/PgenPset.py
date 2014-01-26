@@ -344,7 +344,7 @@ def ddisjointCompose(sdx):
     else:
         for vnh in VNHs:
             if vnh!='VNH':
-                print "Augmenting for mac: ",vnh
+                #print "Augmenting for mac: ",vnh
                 affectedVNH={}
                 affectedVNH[vnh]=sdx.VNH_2_mac[vnh]
                 decomp[vnh]=processVNH(sdx,affectedVNH,vnh)
@@ -420,7 +420,7 @@ def processVNH(sdx,affectedVNH,vnh):
         part.decomposedPolicies[vnh]=tmp
         decomp[part.id_]=tmp
         
-    print "Traversing for this VNH takes time=",time.time()-start1
+    #print "Traversing for this VNH takes time=",time.time()-start1
     return decomp  
 
   
