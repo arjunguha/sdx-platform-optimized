@@ -133,6 +133,7 @@ class SDX(object):
         self.inbound={}
         self.best_paths={}
         self.pfxgrp={}
+        self.part2pg={}
         
     def get_participantName(self,ip):
         pname=''

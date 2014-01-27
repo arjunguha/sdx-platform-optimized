@@ -254,5 +254,5 @@ if __name__ == '__main__':
     #augmentTime,mdsTime=prefixGroupExperiment('dlsm',500,800,1,0.01)
     #nRules,compileTime,cacheSize,deltaRules,updateCompileTime=updateBurstExperiment('dlsm',40,10,1,[10,20,30,40,50])
     #print nRules,compileTime,cacheSize,deltaRules,updateCompileTime
-    nRules,augmentTime,compileTime,cacheSize=UPDATEDcompilationTimeExperiment(80,10,1)
+    nRules,augmentTime,compileTime,cacheSize=UPDATEDcompilationTimeExperiment(100,200,3)
     print nRules,augmentTime,compileTime,cacheSize

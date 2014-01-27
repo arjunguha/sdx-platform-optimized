@@ -205,6 +205,18 @@ def get_default_forwarding_policy(policy,best_path, participant, participant_lis
     # for peer in best_path:
     #if debug==True: print best_path,participant,participant_list
     #if debug==True: print best_path.keys()
+    #print "Part 2 pg: ",sdx.part2pg[participant],best_path
+    fwdport=filter(lambda x: len(set(best_path[x]).intersection(set(sdx.part2pg[participant])))>0,best_path.keys()) 
+    #print fwdport
+    newBestpath={}
+    for port in fwdport:
+        newBestpath[port]=list(set(best_path[port]).intersection(set(sdx.part2pg[participant])))
+    #print newBestpath
+    policy_ip = parallel([match_prefixes_set(set(newBestpath[peer])) >> fwd(participant_list[participant][unicode(str(peer))][0]) 
+                        for peer in newBestpath])
+    #print policy_ip
+    return policy_ip
+    """
     
     inboundPorts=filter(lambda x: len(sdx.inbound[x])>0,sdx.inbound.keys())
     #print "inbound ports: ",inboundPorts
@@ -215,7 +227,7 @@ def get_default_forwarding_policy(policy,best_path, participant, participant_lis
     fwdport=filter(lambda port: port not in sdx.participant_2_port[participant][participant],fwdport)
     
     if debug==True: print "default forwarding for these peers: ",fwdport
-    #print "best path: ",best_path
+    print "best path: ",best_path
     if len(best_path.keys())!=0:
         if debug==True: print type(best_path.keys()[0])
     bestpaths=filter(lambda x: int(x) in fwdport,best_path.keys()) 
@@ -244,6 +256,7 @@ def get_default_forwarding_policy(policy,best_path, participant, participant_lis
     #print "Final: ",policy_ip
     # if debug==True: print policy_ip
     return policy_ip 
+    """
 
 def return_vnhop(vnh_2_prefix, VNH_2_mac, pfx):
     vnhop = EthAddr('A1:A1:A1:A1:A1:A1')

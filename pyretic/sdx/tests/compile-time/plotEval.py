@@ -32,8 +32,10 @@ def main(option):
     #dname='MDS_Fri24Jan2014060412.dat'
     #dname='mdsTrace_Sat25Jan2014032939.dat' 
     #dname='bgpUpdate_Sat25Jan2014101855.dat'
-    dname='bgpUpdate_Sat25Jan2014114145.dat'
-    dname='UPDATEDcompileTime_Sun26Jan2014194001.dat'
+    #dname='bgpUpdate_Sat25Jan2014114145.dat'
+    #dname='UPDATEDcompileTime_Sun26Jan2014194001.dat'
+    dname='bgpUpdate_Tue28Jan2014061201.dat'
+    dname='UPDATEDcompileTime_Tue28Jan2014063420.dat'
     
     if option=='initCompile':
         print "plotting "+str(option)+" result" 
@@ -205,15 +207,15 @@ def main(option):
                 tick.label.set_fontsize(24)
             leg.sort() 
             pl.legend((p),legnd,'upper left',prop={'size':24})
-            pl.xlabel('# BGP Updates',fontsize=32)
+            pl.xlabel('Burst Size (BGP Updates)',fontsize=32)
             if param=='deltaRules':
-                pl.ylabel('# deltaRules',fontsize=32)
+                pl.ylabel('# Additional Rules',fontsize=32)
                 pl.xlim(0,51)
                 ax.set_ylim(ymin=1)
             elif param=='updateTime':
-                pl.ylabel('Time(seconds)',fontsize=32)
+                pl.ylabel('Time (seconds)',fontsize=32)
                 pl.xlim(0,51)
-                #ax.set_ylim(ymin=1)
+                ax.set_ylim(ymin=0)
 
                 
             ax.grid(True)

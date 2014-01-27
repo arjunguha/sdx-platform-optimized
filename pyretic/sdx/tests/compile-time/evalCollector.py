@@ -59,10 +59,10 @@ def main(option):
         #modes=['dlsm','lsm','naive']
         #nparts=[20,40,80,160]
         #modes=['dlsm','lsm']
-        nparts=[200,300,400]
-        npfxes=[400,600,800,1000]
+        nparts=[100,200,300,400]
+        npfxes=[200,400,600,800,1000]
         #npfxes=[10,20]
-        nfields=1
+        nfields=3
         mode='dlsm'
         #data['partpfx']=partpfx
         data['nparts']=nparts

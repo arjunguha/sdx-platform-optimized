@@ -893,13 +893,28 @@ def generatePolicies(sdx,participants,ntot,nmult,partTypes,frand,nfields,nval,he
     # Logic to equally divide prefix sets announced by each Tier1 ISPs
     tmp=sdx.pfxgrp.keys()
     div=int(float(len(tmp))/nparts[0])
+    if debug==True: print 'DIV:',div
     pset={}
     for i in range(nparts[0]-1):
         k=i*div
         pset[i+1]=tmp[k:k+div]
     k=(nparts[0]-1)*div
     pset[nparts[0]]=tmp[k:]
-    #print pset
+    
+    # Logic to equally divide the eyeballs among the content providers
+    tmp=range(1,n1+1)
+    div=int(float(len(tmp))/(n3-n2))
+    if debug==True: print "new div",div
+    eb={}
+    kys=range(n2+1,n3)
+    for i in kys:
+        k=(i-(n2+1))*div
+        eb[i]=tmp[k:k+div]
+    k=(n3-n2-1)*div
+    eb[n3]=tmp[k:]
+    if debug==True: print "EB:",eb
+    
+    if debug==True: print "Prefix Set: ",pset
     
     nrand=int(frand*ntot)
     if nrand==0:
@@ -908,6 +923,7 @@ def generatePolicies(sdx,participants,ntot,nmult,partTypes,frand,nfields,nval,he
     intensityFactor=2 # more rules for top eyeballs and content providers    
     inbound={}
     for participant in sdx.participants:
+        sdx.part2pg[participant.id_]=[]
         policy=drop
         pdict={}
         
@@ -968,14 +984,15 @@ def generatePolicies(sdx,participants,ntot,nmult,partTypes,frand,nfields,nval,he
                         
             # outbound policies for few top eyeballs
             
-            topEyeballs=random.sample(range(1,n1+1),nrand)
+            topEyeballs=random.sample(range(1,n1),nrand)
             for pid in topEyeballs:
                 # "part: ",pid
                 announced=sdx.pfxgrp.keys()
                 # currently selecting only one dstip prefix set for writing specific rules
                 pfxset=random.choice(announced)
                 tmp=getPred(headerFields,fieldValues,nfields)
-                tmp=(match_prefixes_set(sdx.pfxgrp[pfxset])>>tmp)               
+                tmp=(match_prefixes_set(sdx.pfxgrp[pfxset])>>tmp) 
+                sdx.part2pg[participant.id_].append(sdx.pfxgrp[pfxset][0])              
                 pdict[tmp]=fwd(participant.peers[str(pid)].participant.phys_ports[0].id_)
            
             
@@ -985,11 +1002,13 @@ def generatePolicies(sdx,participants,ntot,nmult,partTypes,frand,nfields,nval,he
             # outbound policies for top eyeballs
             #for pid in range(1,n1+1):
             topeyeballs=random.sample(range(1,n1+1),nrand) 
+            topeyeballs=eb[int(participant.id_)]
             for pid in topeyeballs:
                 # "pset:",pset[pid]
                 #print len(pset[pid]),pset
                 for pfxset in random.sample(pset[pid],len(pset[pid])):
                     t1=(match_prefixes_set(sdx.pfxgrp[pfxset]))
+                    sdx.part2pg[participant.id_].append(sdx.pfxgrp[pfxset][0])
                     t2=(getPred(headerFields,fieldValues,nfields))
                     t=[t1,t2]
                     tmp=t1>>t2
@@ -1038,6 +1057,7 @@ def generatePolicies(sdx,participants,ntot,nmult,partTypes,frand,nfields,nval,he
         policy=getDisjointPolicies(pdict)
        
         #print policy.compile()
+        if debug==True: print "Part 2 pg: ",sdx.part2pg
         if debug==True: print policy 
             
         participant.policies=policy
@@ -1170,7 +1190,7 @@ def traverse(policy,affectedVNH,newVNH):
 
 def main(argv):
     # define the parameters
-    ntot=200 # total number of participants
+    ntot=100 # total number of participants
     fmult=0.05  # fraction of participants with multiple ports
     nmult=int(ntot*fmult)
     nports=2 # number of ports for the participants with multiple ports 
@@ -1181,7 +1201,7 @@ def main(argv):
     advertisers=[(0.1,1),(0.05,0.20),(0.85,0.01)]
     partTypes=[0.15,0.05,0.05,0.75]
     frand=0.025
-    nfields=1
+    nfields=3
     nval=50
     
     
@@ -1209,6 +1229,7 @@ def main(argv):
     start=time.time()
     vnh_assignment(sdx,participants)
     
+    
     augmentTime1=time.time()-start
     print "Policy Augmentation: ",time.time()-start
     decompose=True
@@ -1231,14 +1252,14 @@ def main(argv):
     s3=total_size(disjoint_cache,verbose=False)
     cachSize=s1+s2+s3
     print "Cache sizes: ",cachSize
-    """
+    
     # Process BGP Updates
     updateEval=True    
     if updateEval==True:        
         nUpdates=1
         biasfactor=10
         nRules1,compileTime1=addVNH(sdx,nUpdates,biasfactor,advertisers,ntot)
-        
+     """   
         
     
 
