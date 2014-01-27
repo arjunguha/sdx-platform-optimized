@@ -11,7 +11,7 @@ import subprocess
 from multiprocessing import Process, Queue
 from time import gmtime, strftime
 
-dataPoints=4
+dataPoints=2
 recursionLimit=100000
 
 def getKey(ntot,npfx):
@@ -59,7 +59,7 @@ def main(option):
         #modes=['dlsm','lsm','naive']
         #nparts=[20,40,80,160]
         #modes=['dlsm','lsm']
-        nparts=[100,200,300,400]
+        nparts=[100,200,300]
         npfxes=[200,400,600,800,1000]
         #npfxes=[10,20]
         nfields=3
@@ -117,12 +117,14 @@ def main(option):
         data={}
         print 'Running Prefix Benchmarking Experiment'
 
-        nparts=[100,200,300,400]
+        #nparts=[100,200,300,400]
+        nparts=[100,200,300]
         #npfxes=[20,40,60,80,100]
-        npfxes=[500]
+        npfxes=[100]
 
-        nUpdates=[1,10,20,30,40,50]
-        nfields=1
+        nUpdates=[1,20,40]
+        #nUpdates=[1,10]
+        nfields=3
         mode='dlsm'
         data['npfxes']=npfxes
         data['nfields']=nfields
@@ -155,9 +157,9 @@ def main(option):
             with open(dname, 'w') as outfile:
                 json.dump(data,outfile,ensure_ascii=True,encoding="ascii")
             print data
-            msg='MATTAPAN: Completed Update Burst for '+str(ntot)+' participants '+str(npfx)
+            msg='CAPEN: Completed Update Burst for '+str(ntot)+' participants '
 
-            send_email(msg)
+            #send_email(msg)
 
 
     elif option=='prefixBM':

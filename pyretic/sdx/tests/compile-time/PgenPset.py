@@ -519,6 +519,7 @@ def disjointDeReCompose(sdx,affectedVNHs,newVNHs):
     disjointPolicies=[]
     lowerPolicies=[]
     fullDisjoint=True
+    cache=False
     """
     if debug==True: print "disjointDeReCompose called",affectedVNH.values()[0]
     # take into consideration the participants with inbound policies
@@ -628,7 +629,7 @@ def disjointDeReCompose(sdx,affectedVNHs,newVNHs):
 
 
             
-    dPolicy=disjoint(disjointPolicies,lowerPolicies)
+    dPolicy=disjoint(disjointPolicies,lowerPolicies,cache)
     if debug==True: print "Compile the disjoint policies"
     start_comp=time.time()
     dclassifier=dPolicy.compile()
@@ -849,7 +850,7 @@ def disjointCompose(sdx):
 
     
 def generatePolicies(sdx,participants,ntot,nmult,partTypes,frand,nfields,nval,headerFields,fieldValues):
-    
+    fracPG=0.06
     # Logic for selecting header fields
     #print "GP: ",headerFields,nfields
     headerFields=random.sample(headerFields,nfields)
@@ -900,6 +901,24 @@ def generatePolicies(sdx,participants,ntot,nmult,partTypes,frand,nfields,nval,he
         pset[i+1]=tmp[k:k+div]
     k=(nparts[0]-1)*div
     pset[nparts[0]]=tmp[k:]
+    #print "Before Normalization: ",pset
+    N=len(sdx.pfxgrp.keys())
+    N1=int(N*fracPG)
+    if N1==0:
+        N1=1
+    #N1=5
+    p=len(pset[1])
+    #print N1,p
+    if p<N1:
+        # Add more prefixes to mainitain that each participant has policies for atheast 5%
+        #print "Needs Change"
+        for k in pset:
+            if k!=n1:
+                new=random.sample(tmp,N1-p)
+                pset[k]+=new
+    #print "After Normalization: ",pset
+    
+    
     
     # Logic to equally divide the eyeballs among the content providers
     tmp=range(1,n1+1)
@@ -1001,21 +1020,23 @@ def generatePolicies(sdx,participants,ntot,nmult,partTypes,frand,nfields,nval,he
             
             # outbound policies for top eyeballs
             #for pid in range(1,n1+1):
-            topeyeballs=random.sample(range(1,n1+1),nrand) 
+            #topeyeballs=random.sample(range(1,n1+1),nrand) 
             topeyeballs=eb[int(participant.id_)]
+            
             for pid in topeyeballs:
-                # "pset:",pset[pid]
+                #print "pset:",pset[pid],topeyeballs
                 #print len(pset[pid]),pset
-                for pfxset in random.sample(pset[pid],len(pset[pid])):
-                    t1=(match_prefixes_set(sdx.pfxgrp[pfxset]))
-                    sdx.part2pg[participant.id_].append(sdx.pfxgrp[pfxset][0])
-                    t2=(getPred(headerFields,fieldValues,nfields))
-                    t=[t1,t2]
-                    tmp=t1>>t2
-                    #print "SEQ: ",tmp
-                    #tmp=(drop|match_prefixes_set(sdx.pfxgrp[pfxset]))
-                    pdict[tmp]=fwd(participant.peers[str(pid)].participant.phys_ports[0].id_)
-                #print pdict
+                if pid!=n1:
+                    for pfxset in random.sample(pset[pid],len(pset[pid])):
+                        t1=(match_prefixes_set(sdx.pfxgrp[pfxset]))
+                        sdx.part2pg[participant.id_].append(sdx.pfxgrp[pfxset][0])
+                        t2=(getPred(headerFields,fieldValues,nfields))
+                        t=[t1,t2]
+                        tmp=t1>>t2
+                        #print "SEQ: ",tmp
+                        #tmp=(drop|match_prefixes_set(sdx.pfxgrp[pfxset]))
+                        pdict[tmp]=fwd(participant.peers[str(pid)].participant.phys_ports[0].id_)
+                    #print pdict
             """
             # outbound policies for traffic to randomly selected tier2 
             tier2=random.sample(range(n1+1,n2+1),intensityFactor*nrand) 
@@ -1057,7 +1078,7 @@ def generatePolicies(sdx,participants,ntot,nmult,partTypes,frand,nfields,nval,he
         policy=getDisjointPolicies(pdict)
        
         #print policy.compile()
-        if debug==True: print "Part 2 pg: ",sdx.part2pg
+        if debug==True: print "Part 2 pg: ",sdx.part2pg[participant.id_],len(sdx.part2pg[participant.id_])
         if debug==True: print policy 
             
         participant.policies=policy
@@ -1241,6 +1262,7 @@ def main(argv):
     print nRules,compileTime,augmentTime1,float(augmentTime2)/len(sdx.VNH_2_IP.keys())
     
     """
+    
     compile_Policies(participants)
     start=time.time()
     nRules,compileTime=disjointCompose(sdx)

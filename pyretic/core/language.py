@@ -882,7 +882,7 @@ class disjoint(CombinatorPolicy):
     :param policies: the policies to be combined.
     :type policies: list Policy
     """
-    def __new__(self, policies=[],lower=[]):
+    def __new__(self, policies=[],lower=[],cache=True):
         # Hackety hack.
         if len(policies) == 0:
             return identity
@@ -891,8 +891,9 @@ class disjoint(CombinatorPolicy):
             rv.__init__(policies)
             return rv
 
-    def __init__(self, policies=[],lower=[]):
+    def __init__(self, policies=[],lower=[],cache=True):
         self.lower=lower
+        self.cache=cache
         if len(policies) == 0:
             raise TypeError
         super(disjoint, self).__init__(policies)
@@ -916,7 +917,7 @@ class disjoint(CombinatorPolicy):
         for policy in self.policies:
             start=time.time()
             tmp_rules=None
-            if compiler_optimize==True:
+            if compiler_optimize==True and self.cache==True:
                 hash1=policy.__repr__()
                 if hash1 in disjoint_cache:
                     tmp_rules=disjoint_cache[hash1]
@@ -925,6 +926,7 @@ class disjoint(CombinatorPolicy):
                     disjoint_cache[hash1]=tmp_rules                    
                 
             else:
+                #print "cache not used"
                 tmp_rules=policy.compile().rules
                                     
             last_rule=[tmp_rules[len(tmp_rules)-1]]
