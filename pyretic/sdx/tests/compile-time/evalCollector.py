@@ -11,7 +11,7 @@ import subprocess
 from multiprocessing import Process, Queue
 from time import gmtime, strftime
 
-dataPoints=10
+dataPoints=4
 recursionLimit=100000
 
 def getKey(ntot,npfx):
@@ -21,22 +21,22 @@ def send_email(option):
     import smtplib
     import datetime
     current_time = datetime.datetime.now().time()
-    
+
     gmail_user = "glex.qsd@gmail.com"
-    gmail_pwd = "***"
+    gmail_pwd = "JaiGurudev787"
     FROM = 'glex.qsd@@gmail.com'
     TO = ['glex.qsd@gmail.com'] #must be a list
-    
+
     SUBJECT = "SDX: "+str(option).upper()+" Benchmarking results"
     TEXT = "Completed "+str(option).upper()+" Benchmarking at: "+str(current_time)
 
     # Prepare actual message
     message = """\From: %s\nTo: %s\nSubject: %s\n\n%s
             """ % (FROM, ", ".join(TO), SUBJECT, TEXT)
-        
+
     # Try sending the email
     try:
-        #server = smtplib.SMTP(SERVER) 
+        #server = smtplib.SMTP(SERVER)
         server = smtplib.SMTP("smtp.gmail.com", 587) #or port 465 doesn't seem to work!
         server.ehlo()
         server.starttls()
@@ -46,12 +46,12 @@ def send_email(option):
         print 'successfully sent the mail'
     except:
         print "failed to send mail"
-    
+
 def main(option):
     time_curr=strftime("%a%d%b%Y%H%M%S", gmtime())
     #print time_curr
     dname=option+'_'+str(time_curr)+'.dat'
-    
+
     if option=='UPDATEDcompileTime':
         data={}
         print 'Running Compilation Time Experiment'
@@ -59,9 +59,9 @@ def main(option):
         #modes=['dlsm','lsm','naive']
         #nparts=[20,40,80,160]
         #modes=['dlsm','lsm']
-        nparts=[100,200,300,400]
+        nparts=[200,300,400]
         npfxes=[200,400,600,800,1000]
-        #npfx=10
+        #npfxes=[10,20]
         nfields=1
         mode='dlsm'
         #data['partpfx']=partpfx
@@ -71,9 +71,9 @@ def main(option):
         data['modes']=mode
         data['cTime']={}
         data['nrules']={}
-        data['nvnhs']={} 
+        data['nvnhs']={}
         data['cacheSize']={}
-        data['augmentTime']={}       
+        data['augmentTime']={}
         for ntot in nparts:
 
             k1=ntot
@@ -89,7 +89,7 @@ def main(option):
                 data['augmentTime'][k1][k2]=[]
                 data['cTime'][k1][k2]=[]
                 data['nrules'][k1][k2]=[]
-                
+
                 for dp in range(dataPoints):
                     print "iteration: ",dp+1
                     q=Queue()
@@ -98,21 +98,21 @@ def main(option):
                     qout=q.get()
                     p.join()
                     nRules,augmentTime,compileTime,cacheSize=qout
- 
+
                     data['cacheSize'][k1][k2].append(cacheSize)
                     data['augmentTime'][k1][k2].append(augmentTime)
                     data['cTime'][k1][k2].append(compileTime)
                     data['nrules'][k1][k2].append(nRules)
-                    
-                with open(dname, 'w') as outfile:
-                    json.dump(data,outfile,ensure_ascii=True,encoding="ascii")          
-                print data
-                msg='Completed Init Compile for '+str(ntot)+' participants '+str(npfx)+' prefix sets'
-                
-                send_email(msg)
-        
-        
-        
+
+                    with open(dname, 'w') as outfile:
+                        json.dump(data,outfile,ensure_ascii=True,encoding="ascii")
+                    print data
+                    msg='MATTAPAN: Completed Init Compile for '+str(ntot)+' participants '+str(npfx)+' prefix sets iteration '+str(dp)+':'+str(nRules)+','+str(compileTime)+','+str(augmentTime)+','+str(cacheSize)
+
+                    send_email(msg)
+
+
+
     if option=='bgpUpdate':
         data={}
         print 'Running Prefix Benchmarking Experiment'
@@ -120,7 +120,7 @@ def main(option):
         nparts=[100,200,300,400]
         #npfxes=[20,40,60,80,100]
         npfxes=[500]
-        
+
         nUpdates=[1,10,20,30,40,50]
         nfields=1
         mode='dlsm'
@@ -129,18 +129,18 @@ def main(option):
         data['modes']=mode
         data['nUpdates']=nUpdates
         data['time']={}
-        data['nRules']={} 
+        data['nRules']={}
         data['deltaRules']={}
-        data['updateTime']={} 
-              
+        data['updateTime']={}
+
         for ntot in nparts:
             k1=ntot
             nprefixes=npfxes[0]
             data['time'][k1]={}
-            data['nRules'][k1]={} 
+            data['nRules'][k1]={}
             data['deltaRules'][k1]={}
-            data['updateTime'][k1]={} 
-               
+            data['updateTime'][k1]={}
+
             q=Queue()
             p=Process(target=updateBurstExperiment, args=(mode,ntot,nprefixes,nfields,nUpdates,dataPoints,q))
             p.start()
@@ -151,12 +151,12 @@ def main(option):
             data['nRules'][k1]=(nRules)
             data['deltaRules'][k1]=(deltaRules)
             data['updateTime'][k1]=(updateCompileTime)
-                    
+
             with open(dname, 'w') as outfile:
-                json.dump(data,outfile,ensure_ascii=True,encoding="ascii")          
+                json.dump(data,outfile,ensure_ascii=True,encoding="ascii")
             print data
-    
-    
+
+
     elif option=='prefixBM':
         data={}
         print 'Running Prefix Benchmarking Experiment'
@@ -177,9 +177,9 @@ def main(option):
         data['modes']=mode
         data['fractionGroup']=fractionGroup
         data['time']={}
-        data['nvnhs']={} 
+        data['nvnhs']={}
         data['mdsTime']={}
-        data['augmentTime']={}       
+        data['augmentTime']={}
         for npfx in npfxes:
             ntot=nparts[0]
             k1=npfx
@@ -191,7 +191,7 @@ def main(option):
                 data['nvnhs'][k1][k2]=[]
                 data['mdsTime'][k1][k2]=[]
                 data['augmentTime'][k1][k2]=[]
-                
+
                 for dp in range(dataPoints):
                     print "iteration: ",dp+1
                     q=Queue()
@@ -203,11 +203,11 @@ def main(option):
                     data['nvnhs'][k1][k2].append(nVNHs)
                     data['mdsTime'][k1][k2].append(mdsTime)
                     data['augmentTime'][k1][k2].append(augmentTime)
-                    
+
         with open(dname, 'w') as outfile:
-            json.dump(data,outfile,ensure_ascii=True,encoding="ascii")          
+            json.dump(data,outfile,ensure_ascii=True,encoding="ascii")
         print data
-        
+
     elif option=='compileTime':
         data={}
         print 'Running Compilation Time Experiment'
@@ -230,9 +230,9 @@ def main(option):
         data['fractionGroup']=fractionGroup
         data['cTime']={}
         data['nrules']={}
-        data['nvnhs']={} 
+        data['nvnhs']={}
         data['mdsTime']={}
-        data['augmentTime']={}       
+        data['augmentTime']={}
         for ntot in nparts:
             #ntot=nparts[0]
             fg=fractionGroup[0]
@@ -249,7 +249,7 @@ def main(option):
                 data['augmentTime'][k1][k2]=[]
                 data['cTime'][k1][k2]=[]
                 data['nrules'][k1][k2]=[]
-                
+
                 for dp in range(dataPoints):
                     print "iteration: ",dp+1
                     q=Queue()
@@ -263,13 +263,13 @@ def main(option):
                     data['augmentTime'][k1][k2].append(augmentTime)
                     data['cTime'][k1][k2].append(compileTime)
                     data['nrules'][k1][k2].append(nRules)
-                    
+
         with open(dname, 'w') as outfile:
-            json.dump(data,outfile,ensure_ascii=True,encoding="ascii")          
+            json.dump(data,outfile,ensure_ascii=True,encoding="ascii")
         print data
-        
-        
-        
+
+
+
     elif option=='MDS':
         data={}
         print 'Running Prefix Benchmarking Experiment'
@@ -291,9 +291,9 @@ def main(option):
         data['modes']=mode
         data['fractionGroup']=fractionGroup
         data['time']={}
-        data['nvnhs']={} 
+        data['nvnhs']={}
         data['mdsTime']={}
-        data['augmentTime']={}       
+        data['augmentTime']={}
         for ntot in nparts:
             #ntot=nparts[0]
             fg=fractionGroup[0]
@@ -306,7 +306,7 @@ def main(option):
                 data['nvnhs'][k1][k2]=[]
                 data['mdsTime'][k1][k2]=[]
                 data['augmentTime'][k1][k2]=[]
-                
+
                 for dp in range(dataPoints):
                     print "iteration: ",dp+1
                     q=Queue()
@@ -318,14 +318,14 @@ def main(option):
                     data['nvnhs'][k1][k2].append(nVNHs)
                     data['mdsTime'][k1][k2].append(mdsTime)
                     data['augmentTime'][k1][k2].append(augmentTime)
-                    
+
         with open(dname, 'w') as outfile:
-            json.dump(data,outfile,ensure_ascii=True,encoding="ascii")          
+            json.dump(data,outfile,ensure_ascii=True,encoding="ascii")
         print data
-        
+
     send_email(option)
-        
+
 if __name__ == '__main__':
     sys.setrecursionlimit(recursionLimit)
-    main(sys.argv[1])  
-    
+    main(sys.argv[1])
+
