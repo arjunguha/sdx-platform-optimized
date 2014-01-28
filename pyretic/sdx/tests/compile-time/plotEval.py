@@ -36,8 +36,11 @@ def main(option):
     #dname='UPDATEDcompileTime_Sun26Jan2014194001.dat'
     dname='bgpUpdate_Tue28Jan2014061201.dat'
     dname='UPDATEDcompileTime_Tue28Jan2014063420.dat'
-    dname='mdsTrace_linx__Mon27Jan2014204022.dat'
-    dname='mdsTrace_decix__Mon27Jan2014211640.dat'
+    #dname='mdsTrace_linx__Mon27Jan2014204022.dat'
+    #dname='mdsTrace_decix__Mon27Jan2014211640.dat'
+    dname='bgpUpdate_Wed29Jan2014031457.dat'
+    dname='UPDATEDcompileTime_Wed29Jan2014023417.dat'
+    dname='mdsTrace_Wed29Jan2014173721.dat'
     
     if option=='initCompile':
         print "plotting "+str(option)+" result" 
@@ -66,6 +69,11 @@ def main(option):
                     #formating error hack
                     #v[hdr]=[v[hdr][0][0],v[hdr][1][0]]
                     print v[hdr]
+                    tmp_dat=[]
+                    if param=='cacheSize':
+                        for dat in v[hdr]:
+                            tmp_dat.append(int(float(dat)/1048576))
+                        v[hdr]=tmp_dat
                     total, average, median, standard_deviation, minimum, maximum, confidence=stats(v[hdr])
                     print median,standard_deviation
                     #median=average
@@ -114,17 +122,23 @@ def main(option):
             pl.legend((p),legnd,'upper left',prop={'size':24})
             pl.xlabel('# Prefix Groups',fontsize=32)
             if param=='cacheSize':
-                pl.ylabel('Bytes',fontsize=32)
-                #pl.xlim(0,51)
-                #ax.set_ylim(ymin=1)
+                pl.ylabel('Megabytes',fontsize=32)
+                ax.set_xlim(xmin=1)
+                ax.set_ylim(ymin=-1)
             elif param=='cTime':
                 pl.ylabel('Time (seconds)',fontsize=32)
+                ax.set_xlim(xmin=1)
+                ax.set_ylim(ymin=-1)
                 
             elif param=='augmentTime':
                 pl.ylabel('Time (seconds)',fontsize=32)
+                ax.set_xlim(xmin=1)
+                ax.set_ylim(ymin=-1)
                 
             elif param=='nrules':
                 pl.ylabel('# Flow Rules',fontsize=32)
+                ax.set_xlim(xmin=1)
+                ax.set_ylim(ymin=-1)
                 #pl.xlim(0,51)
                 #ax.set_ylim(ymin=1)
 
@@ -136,7 +150,59 @@ def main(option):
             pl.savefig(plot_name)
             pl.savefig(plot_name_png)
        
-    
+    elif option=='mdsScatter':
+        print "plotting "+str(option)+" result"
+        #dname="composeBM_matapan.dat"
+        data=json.load(open(dname, 'r'))
+        #data=restructureData(data)
+        params=['scatter']
+        xlab=[]
+        for param in params:
+            print "plotting for the param: ",param
+            tplList=data[param]
+            inSize=[]
+            avgSize=[]
+            mdsTime=[]
+            for tpl in tplList:
+                inSize.append(tpl[0]-2)
+                avgSize.append(tpl[1])
+                mdsTime.append(15*3.14*tpl[2]*tpl[2])
+            
+                
+            fig = plt.figure(figsize=(12,12))
+            ax = fig.add_subplot(1,1,1)
+            color_n=['g','m','c','r','b','k','w']
+            markers=['o','*','^','s','d','3','d','o','*','^','1','4']
+            p1=[]
+            i=0
+            print inSize,avgSize,mdsTime
+
+            p1.append([])
+
+
+            p1[i]=pl.scatter(inSize,avgSize,s=mdsTime,linewidths=2,edgecolor='k')
+            p=[]
+            i=0
+
+                
+            for tick in ax.xaxis.get_major_ticks():
+                tick.label.set_fontsize(24)
+            for tick in ax.yaxis.get_major_ticks():
+                tick.label.set_fontsize(24)
+            pl.xlabel('# Input Prefix Sets',fontsize=32)
+
+            pl.ylabel('# Average Size',fontsize=32)
+                #pl.xlim(0,51)
+                #ax.set_ylim(ymin=1)
+                
+            ax.grid(True)
+            
+            plot_name=option+'_'+param+'.eps'
+            plot_name_png=option+'_'+param+'.png'
+            pl.savefig(plot_name)
+            pl.savefig(plot_name_png)
+        
+        
     elif option=='bgpUpdate':
         print "plotting "+str(option)+" result"
         #dname="composeBM_matapan.dat"
@@ -212,12 +278,12 @@ def main(option):
             pl.xlabel('Burst Size (BGP Updates)',fontsize=32)
             if param=='deltaRules':
                 pl.ylabel('# Additional Rules',fontsize=32)
-                pl.xlim(0,51)
-                ax.set_ylim(ymin=1)
+                #pl.xlim(0,51)
+                #ax.set_ylim(ymin=1)
             elif param=='updateTime':
                 pl.ylabel('Time (seconds)',fontsize=32)
-                pl.xlim(0,51)
-                ax.set_ylim(ymin=0)
+                #pl.xlim(0,51)
+                #ax.set_ylim(ymin=0)
 
                 
             ax.grid(True)

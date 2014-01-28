@@ -23,7 +23,7 @@ def send_email(option):
     current_time = datetime.datetime.now().time()
 
     gmail_user = "glex.qsd@gmail.com"
-    gmail_pwd = "JaiGurudev787"
+    gmail_pwd = "xxx"
     FROM = 'glex.qsd@@gmail.com'
     TO = ['glex.qsd@gmail.com'] #must be a list
 
