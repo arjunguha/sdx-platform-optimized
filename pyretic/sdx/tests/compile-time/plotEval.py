@@ -49,7 +49,9 @@ def main(option):
     if option=='initCompile':
         print "plotting "+str(option)+" result" 
         print "plotting "+str(option)+" result"
-        dname='UPDATEDcompileTime_Wed29Jan2014023417.dat'
+        #dname='UPDATEDcompileTime_Wed29Jan2014023417.dat'
+        # This is data from butler with 10 iterations
+        dname='UPDATEDcompileTime_Wed29Jan2014023720.dat'
         data=json.load(open(dname, 'r'))
         #data=restructureData(data)
         params=['nrules','cTime','augmentTime','cacheSize']
@@ -82,7 +84,7 @@ def main(option):
                     elif param=='nrules':
                         print 'nrules'
                         for dat in v[hdr]:                            
-                            tmp_dat.append(int(float(dat)/1000))
+                            tmp_dat.append(int(float(dat)))
                         v[hdr]=tmp_dat
                     total, average, median, standard_deviation, minimum, maximum, confidence=stats(v[hdr])
                     print median,standard_deviation
@@ -148,7 +150,7 @@ def main(option):
                 #ax.set_ylim(ymin=-1)
                 
             elif param=='nrules':
-                pl.ylabel(r'Flow Rules ($\times$ 1000)')
+                pl.ylabel(r'Flow Rules')
                 ax.set_xlim(xmin=1)
                 #ax.set_ylim(ymin=-1)
                 #pl.xlim(0,51)
@@ -248,7 +250,9 @@ def main(option):
             p1=[]
             legnd=[]
             i=0
-            for key in data[param]:
+            keys=data[param].keys()
+            keys.sort()
+            for key in keys:
                 print key
                 raw[key]=data[param][key]['1']
                 tmp=[]
@@ -257,9 +261,12 @@ def main(option):
                 raw[key]=tmp
                 
                 raw[key].sort(reverse=True)
-                #print raw[key]
-                raw[key]=filter(lambda x: x<=1000,raw[key])
-                
+                print raw[key]
+
+                print 'Total number of sample points: ',len(raw[key])
+		#raw[key]=filter(lambda x: x<=1000,raw[key])
+                y=filter(lambda x: x>350,raw[key])
+		print 'Values greater than 350ms: ',len(y) 
                 num_bins=10000
                 counts, bin_edges = np.histogram(raw[key],bins=num_bins,normed=True)
                 print bin_edges
@@ -271,7 +278,7 @@ def main(option):
                 p1.append([])
                 legnd.append(''+str(int(key))+' Participants')
                 
-                p1[i]=pl.plot(bin_edges[1:],cdf,label=key,color=color_n[i],linestyle=linestyles[i])
+                p1[i]=pl.plot(bin_edges[1:],cdf,label=key,color=color_n[i],linestyle=linestyles[i],linewidth=2.0)
                 i+=1
                 
             i=0
@@ -290,11 +297,13 @@ def main(option):
             pl.xlabel('Time (milliseconds)')
 
             #pl.ylabel('CDF',fontsize=32)
-            #pl.xlim(0,51)
-            ax.set_ylim(ymin=0.01)
-                
+            #pl.xlim(0,350)
+            #ax.set_ylim(ymin=0.01)
+            #ax.yaxis.set_major_locator(my_locator)
+            ax.xaxis.set_major_locator(my_locator)   
             ax.grid(True)
             plt.tight_layout()
+
             plot_name=option+'_'+param+'.eps'
             plot_name_png=option+'_'+param+'.png'
             pl.savefig(plot_name)
@@ -578,7 +587,8 @@ def main(option):
             pl.savefig(plot_name_png)
     elif option=='MDS-pg':
         print "plotting "+str(option)+" result"
-        dname='mdsTrace_Wed29Jan2014195955.dat'
+        #dname='mdsTrace_Wed29Jan2014195955.dat'
+        dname='mdsTrace_Fri31Jan2014202905.dat'
         data=json.load(open(dname, 'r'))
         #data=restructureData(data)
         params=['nvnhs','mdsTime']
@@ -625,7 +635,8 @@ def main(option):
             for elem in xlab:
                 tmp.append(elem)
             xlab=tmp
-            leg=filter(lambda x:x<=150,leg)
+            #leg=filter(lambda x:x!=150 and x!=50,leg)
+            leg.sort(reverse=True)
             for k in leg:
                 #leg.append(float(k))
                 
