@@ -12,4 +12,5 @@ from pyretic.lib.corelib import *
 from pyretic.lib.std import *
 from pyretic.core import util
 from pyretic.core.util import frozendict, singleton
+from pyretic.modules.mac_learner import *
 

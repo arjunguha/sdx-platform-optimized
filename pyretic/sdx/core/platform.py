@@ -48,6 +48,7 @@ from netaddr import *
 
 ## Pyretic-specific imports
 from pyretic.sdx.core.pyreticlib import *
+from pyretic.sdx.core.components import *
 
 ## SDX-specific imports
 #from pyretic.sdx.core.components import *

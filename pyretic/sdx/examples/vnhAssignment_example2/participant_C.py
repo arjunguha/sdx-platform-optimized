@@ -40,6 +40,7 @@ from pyretic.lib.std import *
 
 ## SDX-specific imports
 from pyretic.sdx.lib.common import *
+from pyretic.sdx.lib.bgp_interface import *
 from pyretic.sdx.lib.language import *
 
 ## General imports
@@ -66,10 +67,21 @@ def policy(participant, sdx):
     '''
         Specify participant policy
     '''
+
+    prefixes_announced=bgp_get_announced_routes(sdx,'C')
     #participants = parse_config(cwd + "/pyretic/sdx/examples/inbound_traffic_engineering_VNH/local.cfg")
-    prefixes_announced=sdx.prefixes_announced
+    
+    #final_policy=(
+    #              (match(dstport=80) >> sdx.fwd(participant.phys_ports[0])) +
+    #              (match(dstport=22) >> sdx.fwd(participant.phys_ports[0])) +
+    #              (match(dstport=1024) >> sdx.fwd(participant.phys_ports[0])) +
+    #              (match_prefixes_set(set(['140.0.0.0/24'])) >> sdx.fwd(participant.phys_ports[0])) +
+    #              (match_prefixes_set(set(prefixes_announced).difference(set(['140.0.0.0/24']))) >> sdx.fwd(participant.phys_ports[1]))
+    #            )
     
     final_policy= (
-                   (match_prefixes_set(set(prefixes_announced['pg1']['C'])) >> sdx.fwd(participant.phys_ports[0]))
+                   (match_prefixes_set(set(['140.0.0.0/24'])) >> sdx.fwd(participant.phys_ports[0]))+
+                   (match_prefixes_set(set(['150.0.0.0/24'])) >> sdx.fwd(participant.phys_ports[1]))
                 )
+    
     return final_policy

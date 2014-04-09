@@ -10,7 +10,7 @@ from server import server as Server
 from decision_process import decision_process
 
 from pyretic.sdx.utils import get_participants_ports_list
-from pyretic.sdx.lib.bgp_interface import *
+from pyretic.sdx.core.bgp_interface import *
 from pyretic.sdx.bgp.peer import *
 
 class route_server():
