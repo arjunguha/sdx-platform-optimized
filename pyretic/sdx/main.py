@@ -34,101 +34,36 @@
 #        http://www.gnu.org/licenses/.
 #
 
-## Pyretic-specific imports
-from pyretic.lib.corelib import *
-from pyretic.lib.std import *
-
-from pyretic.modules.arp import *
-from pyretic.modules.mac_learner import *
 
 ## SDX-specific imports
-from pyretic.sdx.lib.core import *
-import pyretic.sdx.QuaggaInterface.quagga_interface as qI
+from pyretic.sdx.utils import *
+from pyretic.sdx.utils.arp import *
+from pyretic.sdx.utils.inet import *
+from pyretic.sdx.lib.corelib import *
+from pyretic.sdx.sdxlib import *
 
-## General imports
-import os
-import thread,threading
-from multiprocessing import Process, Queue
 
+''' Get current working directory ''' 
 cwd = os.getcwd()
 
-BGP_PORT = 179
-BGP = match(srcport=BGP_PORT) | match(dstport=BGP_PORT)
-
-
-class SDX_Policies(DynamicPolicy):
-    """Standard MAC-learning logic"""
-    def __init__(self):
-        print "SDX init called"
-        super(SDX_Policies,self).__init__()
-        print "SDX:",self.__dict__
-        (base,participants) = sdx_parse_config(cwd + '/pyretic/sdx/sdx_global.cfg')
-        self.sdx=base
-        self.participants=participants 
-        self.update_policy(True)
         
-        queue=Queue()  
-        # Starting the thread to catch transition signals
-        t1 = threading.Thread(target=self.transition_signal_catcher, args=(queue,))
-        t1.daemon = True
-        t1.start()   
-        
-        # Starting the Quagga Interface thread
-        t2 = threading.Thread(target=qI.main, args=(self.sdx,queue,))
-        t2.daemon = True
-        t2.start()
-        
-        # TODO: Explore if we thread (current) or Process makes more sense here,
-        # especially for BGP (Quagga Thread)
-        
-        print "Done with init"
-        
-    def compose_policies(self,init):
-        # Update the sdx and participant data structures
-        # Get the VNH assignment
-        print "Compose policy function called with init: ",init
-        if init==True:
-            print "INIT: Parsing Policies"
-            sdx_parse_policies(cwd + '/pyretic/sdx/sdx_policies.cfg', self.sdx, self.participants)
-            self.policy=sdx_platform(self.sdx)
-            # Get the time to compile initial set of policies
-            start_comp=time.time()
-            #self.policy.compile()
-            #print "INIT: dict: ",self.__dict__
-            print  'INIT: Aggregate Compilation',time.time() - start_comp, "seconds"
-                   
-        else:
-            self.policy=drop
-            sdx_update_policies(cwd + '/pyretic/sdx/sdx_policies.cfg',self.sdx, self.participants)
-            self.policy=sdx_platform(self.sdx)
-            #print "UPDATE: policy returned: ",self.policy 
-        print "Done with compose"
-        return self.policy
-        
-    def update_policy(self,init):
-        self.policy=self.compose_policies (init)
+''' Main '''
+def main():
     
-    def transition_signal_catcher(self,queue):
-        print "Transition signal catcher called"
-        while 1:
-            try:  
-                line = queue.get(timeout=.1)
-            except:
-                continue
-            else: # Got line 
-                self.update_policy(False)
-       
-def getMacList(VNH_2_IP,VNH_2_MAC):
-    ip_mac_list={}
-    for vnh in VNH_2_IP:
-        if vnh != 'VNH':
-            print VNH_2_IP[vnh],VNH_2_mac[vnh]            
-            ip_mac_list[IPAddr(VNH_2_IP[vnh])]=EthAddr(VNH_2_mac[vnh])
-    return ip_mac_list
+    arp_policy = arp()        
+    runtime=Runtime(arp_policy)
+    policy=runtime.policy 
+    
+    print "SDX policy ",policy    
+    
+    return if_(ARP,
+                   arp_policy,
+                   if_(BGP,
+                           identity,
+                           policy
+                   )
+               ) >> mac_learner()
+               
 
-### Main ###
-def main():    
-    p=SDX_Policies()
-    ip_mac_list=getMacList(p.sdx.VNH_2_IP,p.sdx.VNH_2_mac)
-    print "ip_mac_list: ",ip_mac_list
-    return if_(ARP, arp(ip_mac_list), if_(BGP, identity, p)) >> mac_learner()
+if __name__ == '__main__':
+    main()
