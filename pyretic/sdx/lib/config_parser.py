@@ -88,8 +88,10 @@ def automate_config(config_file,sdx_autoconf):
     with open(config_file, 'w') as outfile:
         json.dump(sdx_participants,outfile,ensure_ascii=True)
         
+    return iplist,macinit
 
-def update_params(sdx):
+
+def update_params(sdx,iplist,macinit):
     participant_2_port = {}
     port_2_participant = {}
     
@@ -104,6 +106,10 @@ def update_params(sdx):
             
     sdx.participant_2_port = participant_2_port
     sdx.port_2_participant = port_2_participant
+    
+    """ Update the VNH parameters"""
+    sdx.VNH_2_IP['VNH'] = iplist
+    sdx.VNH_2_MAC['VNH'] = macinit
 
 
 def sdx_parse_config(config_file,sdx_autoconf,auto):
@@ -111,7 +117,11 @@ def sdx_parse_config(config_file,sdx_autoconf,auto):
         Parse SDX configuration
     """
     if auto:
-        automate_config(config_file,sdx_autoconf)
+        iplist,macinit=automate_config(config_file,sdx_autoconf)
+    else:
+        autoconf = json.load(open(sdx_autoconf, 'r'))
+        iplist=list(IPNetwork(autoconf['subnet']))
+        macinit=autoconf['macinit']
         
     sdx = SDX()
     sdx_config = json.load(open(config_file, 'r'))
@@ -147,7 +157,7 @@ def sdx_parse_config(config_file,sdx_autoconf,auto):
         sdx.add_participant(sdx_participant,participant_name)
     
     ''' Update other SDX platform params like port_2_participant, participant_2_port etc..'''
-    update_params(sdx)    
+    update_params(sdx,iplist,macinit)    
     
     return sdx
 

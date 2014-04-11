@@ -1,7 +1,7 @@
-#############################################
-# Configuration parser                      #
-# author: Arpit Gupta (glex.qsd@gmail.com)  #
-#############################################
+"""
+    Parser for SDX's policies
+    Author: Arpit Gupta (glex.qsd@gmail.com), Muhammad Shahbaz, Laurent Vanbever
+"""
 
 
 from pyretic.sdx.lib.corelib import *

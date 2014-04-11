@@ -1,6 +1,6 @@
 """
      SDX Runtime
-     Author: Arpit Gupta (glex.qsd@gmail.com)
+     Author: Arpit Gupta (glex.qsd@gmail.com), Muhammad Shahbaz, Laurent Vanbever
 """
 
 ## General imports
@@ -19,6 +19,10 @@ from pyretic.sdx.lib.policy_parser import *
 from pyretic.sdx.lib.composition import *
 from pyretic.sdx.lib.compilation import *
 
+
+# Generate SDX configuration automatically
+auto=True
+
 class SDXPolicy(DynamicPolicy):
     """Standard MAC-learning logic"""
     def __init__(self):       
@@ -36,7 +40,8 @@ class Runtime():
         sdxPolicy = SDXPolicy()
         self.policy=sdxPolicy
         cwd = os.getcwd()
-        self.sdx = sdx_parse_config(cwd+'/pyretic/sdx/sdx_global.cfg')
+        sdx_autoconf=cwd+'/pyretic/sdx/sdx_auto.cfg'
+        self.sdx = sdx_parse_config(cwd+'/pyretic/sdx/sdx_global.cfg',sdx_autoconf,auto)
         print self.sdx.server
         
         ''' Event handling for dynamic policy compilation '''  
@@ -65,6 +70,7 @@ class Runtime():
         
         # TODO: why are we running sdx_parse_polcieis for every update_policy (this is a serious bottleneck in policy compilation time) - MS
         cwd = os.getcwd()
+        
         sdx_parse_policies(cwd+'/pyretic/sdx/sdx_policies.cfg',self.sdx)
         
         ''' Get updated policy '''
