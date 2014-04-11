@@ -65,7 +65,7 @@ def policy(participant, sdx):
     '''
         Specify participant policy
     '''
-    prefixes_announced=bgp_get_announced_routes(sdx,'C')
+    prefixes_announced=bgp_get_announced_routes(sdx,'3')
     #participants = parse_config(cwd + "/pyretic/sdx/examples/inbound_traffic_engineering_VNH/local.cfg")
     
     final_policy= (
