@@ -1339,6 +1339,7 @@ class egress_network(DynamicFilter):
 
 def ast_fold(fun, acc, policy):
     import pyretic.lib.query as query
+    print policy
     #print "lang: ",policy
     if (  policy == identity or
           policy == drop or
