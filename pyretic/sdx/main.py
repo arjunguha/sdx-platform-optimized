@@ -43,20 +43,10 @@ from pyretic.sdx.lib.corelib import *
 from pyretic.sdx.sdxlib import *
 
 
-''' Get current working directory ''' 
-cwd = os.getcwd()
-
         
 ''' Main '''
 def main():
-    not_allowed=drop
-    not_allowed = (match(srcmac="A1:A1:00:00:00:01")) | (match(srcmac="A1:A1:00:00:00:00"))
-    allowed =~not_allowed
-    policy=if_(not_allowed,fwd(1),drop)
-    print policy
-    return policy
-    #allowed=~not_allowed
-    """
+
     arp_policy = arp()        
     runtime=Runtime(arp_policy)
     policy=runtime.policy 
@@ -70,7 +60,6 @@ def main():
                            policy
                    )
                ) >> mac_learner()
-     """
 
 if __name__ == '__main__':
     main()
