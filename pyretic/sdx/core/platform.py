@@ -22,6 +22,7 @@ class SDX(object):
         self.participants = {}
         
         self.sdx_ports={}
+        self.sdx_vports={}
         self.participant_id_to_in_var = {}
         self.out_var_to_port = {}
         self.port_id_to_out_var = {}        

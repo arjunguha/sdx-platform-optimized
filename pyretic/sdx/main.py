@@ -42,16 +42,14 @@ from pyretic.sdx.utils.inet import *
 from pyretic.sdx.lib.corelib import *
 from pyretic.sdx.sdxlib import *
 
-
         
 ''' Main '''
 def main():
 
     arp_policy = arp()        
-    runtime=Runtime(arp_policy)
-    policy=runtime.policy 
-    
-    print "SDX policy ",policy    
+    runtime = Runtime(arp_policy)
+    policy = runtime.policy 
+    #print "SDX policy ",policy    
     
     return if_(ARP,
                    arp_policy,

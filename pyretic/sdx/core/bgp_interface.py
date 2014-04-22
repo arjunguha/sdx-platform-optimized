@@ -53,15 +53,28 @@ def bgp_get_best_routes(sdx,participant_name):
 ''' Get announced routes for a participant '''
 def bgp_get_announced_routes(sdx,participant_name):    
     
-    # TODO: should avoid this translation and use prefixes directly for performance gain.
-    
-    announced_routes = []
-    
-    routes = sdx.participants[participant_name].rs_client.get_all_routes('input')
-    
-    for route in routes:
-        announced_routes.append(route['prefix'])
+    # TODO: Remove this hack
+    rsEnabled = False
+    if rsEnabled==False:
+        prefixes_announced={'pg1':{
+                                   '1':['p0'],
+                                   '2':['p1','p2','p3','p4','p6'],
+                                   '3':['p3','p4','p5','p6'],
+                                   '4':['p1','p2','p3','p4','p5','p6'],
+                                   }
+                            }
+        announced_routes = prefixes_announced['pg1'][participant_name]
         
+        
+    else:
+        
+        announced_routes = []
+        
+        routes = sdx.participants[participant_name].rs_client.get_all_routes('input')
+        
+        for route in routes:
+            announced_routes.append(route['prefix'])
+            
     return announced_routes
         
 ''' Update route with new next-hop after VNH processing '''

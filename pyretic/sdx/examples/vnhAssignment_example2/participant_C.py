@@ -34,18 +34,10 @@
 #        http://www.gnu.org/licenses/.
 #
 
-## Pyretic-specific imports
-from pyretic.lib.corelib import *
-from pyretic.lib.std import *
-
-## SDX-specific imports
-from pyretic.sdx.lib.common import *
-from pyretic.sdx.lib.bgp_interface import *
-from pyretic.sdx.lib.language import *
-
-## General imports
 import json
 import os
+from pyretic.sdx.lib.corelib import *
+
 
 cwd = os.getcwd()
 
@@ -68,7 +60,7 @@ def policy(participant, sdx):
         Specify participant policy
     '''
 
-    prefixes_announced=bgp_get_announced_routes(sdx,'C')
+    prefixes_announced=bgp_get_announced_routes(sdx,'3')
     #participants = parse_config(cwd + "/pyretic/sdx/examples/inbound_traffic_engineering_VNH/local.cfg")
     
     #final_policy=(
@@ -80,8 +72,7 @@ def policy(participant, sdx):
     #            )
     
     final_policy= (
-                   (match_prefixes_set(set(['140.0.0.0/24'])) >> sdx.fwd(participant.phys_ports[0]))+
-                   (match_prefixes_set(set(['150.0.0.0/24'])) >> sdx.fwd(participant.phys_ports[1]))
+                   (match_prefixes_set(set(prefixes_announced)) >> sdx.fwd(participant.phys_ports[0]))
                 )
     
     return final_policy

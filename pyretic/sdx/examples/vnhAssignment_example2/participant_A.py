@@ -34,18 +34,10 @@
 #        http://www.gnu.org/licenses/.
 #
 
-## Pyretic-specific imports
-from pyretic.lib.corelib import *
-from pyretic.lib.std import *
-
-## SDX-specific imports
-from pyretic.sdx.lib.common import *
-from pyretic.sdx.lib.bgp_interface import *
-from pyretic.sdx.lib.language import *
-
-## General imports
 import json
 import os
+from pyretic.sdx.lib.corelib import *
+
 
 cwd = os.getcwd()
 
@@ -63,7 +55,7 @@ def policy(participant, sdx):
     '''
     
     #participants = parse_config(cwd + "/pyretic/sdx/examples/inbound_traffic_engineering_VNH/local.cfg")
-    prefixes_announced=bgp_get_announced_routes(sdx,'A')
+    prefixes_announced=bgp_get_announced_routes(sdx,'1')
     
     #final_policy = ((match(dstport=80) >> sdx.fwd(participant.peers['B']))+
     #                (match(dstport=22) >> sdx.fwd(participant.peers['C']))+
