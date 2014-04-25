@@ -13,7 +13,7 @@ import multiprocessing as mp
 import copy
 
 verify = False
-debug = False
+debug = True
 uniformRIB = True
 
 
@@ -62,7 +62,9 @@ def get_matchPorts(sdx, part_id, peer_id):
 def decompose_for_vnhs(sdx):
     """ 
         Decompose policies of all the participants for affected VNHs. 
-    """    
+    """
+    if debug:
+        print "decompose_for_vnhs called"    
     decomposedPolicies = []
     VNHs = sdx.VNH_2_mac.keys()
     start = time.time()
@@ -160,7 +162,7 @@ def disjoint_inport_vnhCompose(sdx):
     lowerPolicies = []
     fullDisjoint = True
     if debug:
-        print "disjoint_inport_vnhCompose called", affectedVNH.values()[0]
+        print "disjoint_inport_vnhCompose called"
 
     for participant in sdx.participants:
         if (isDefault(sdx, participant) == False):
@@ -175,10 +177,12 @@ def disjoint_inport_vnhCompose(sdx):
                 for each of these participant
             """
             inboundPolicy = simplifyInbound(selfPorts, inboundPolicy)
-            if debug: print "After simplification",inboundPolicy
             
             """ Compose the inbound policies matching on virtual/physical switch (not fully implemented) """
             tmp_policy_participant = match_outports >> inboundPolicy >> match_outports
+            if debug: 
+                print "Inbound policy for participant: ",participant.id_
+                print tmp_policy_participant.compile()
             lowerPolicies.append(tmp_policy_participant)
 
     # for now ignore the inbound policies
@@ -198,7 +202,7 @@ def disjoint_inport_vnhCompose(sdx):
                 peer = sdx.participants_dict[peer_id]
 
                 if debug:
-                    print "2 Seq compiling policies of part: ", participant.id_, " with peer: ", peer_id
+                    print "Seq compiling policies of part: ", participant.id_, " with peer: ", peer_id
 
                 match_inports, match_outports = get_matchPorts(sdx, participant.id_, peer_id)
                 
@@ -206,14 +210,17 @@ def disjoint_inport_vnhCompose(sdx):
                 tmp_policy_peer = (match(dstmac=sdx.VNH_2_mac[vnh]) >> match_inports >> participant.decomposedPolicies[
                         vnh] >> match_outports >> peer.decomposedPolicies[vnh] >> match_outports)
                 
+                
                 if fullDisjoint:
+                    """ takes care of all the undesired drop cases"""
                     tmp_policy_peer = drop + tmp_policy_peer
                     if tmp_policy_peer != drop:
-                        # print tmp_policy_peer
                         disjointPolicies.append(tmp_policy_peer)
+                        if debug:
+                            #print tmp_policy_peer
+                            print tmp_policy_peer.compile()
                 else:
                     tmp_policy_vnh += tmp_policy_peer
-                    # print tmp_policy_vnh
 
             if not fullDisjoint:
                 if tmp_policy_vnh != drop:

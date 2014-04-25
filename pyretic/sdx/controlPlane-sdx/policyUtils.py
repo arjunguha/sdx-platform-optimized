@@ -111,6 +111,9 @@ def processVNH(sdx, affectedVNH, vnh):
         # TODO: update why we have repetition of input parameter (affectedVNH)
         tmp = traverse(part.policies, affectedVNH, affectedVNH)
         part.decomposedPolicies[vnh] = tmp
+        if debug: 
+            print "initial policy: ", part.policies
+            print "For affected VNH: ", vnh, "decomposed policy: ", tmp
         decomp[part.id_] = tmp
 
     return decomp
