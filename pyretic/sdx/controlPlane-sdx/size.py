@@ -1,4 +1,4 @@
-# source: http://code.activestate.com/recipes/577504/ 
+# source: http://code.activestate.com/recipes/577504/
 
 from __future__ import print_function
 from sys import getsizeof, stderr
@@ -8,6 +8,7 @@ try:
     from reprlib import repr
 except ImportError:
     pass
+
 
 def total_size(o, handlers={}, verbose=False):
     """ Returns the approximate memory footprint an object and all of its contents.
@@ -27,10 +28,12 @@ def total_size(o, handlers={}, verbose=False):
                     dict: dict_handler,
                     set: iter,
                     frozenset: iter,
-                   }
+                    }
     all_handlers.update(handlers)     # user handlers take precedence
-    seen = set()                      # track which object id's have already been seen
-    default_size = getsizeof(0)       # estimate sizeof object without __sizeof__
+    # track which object id's have already been seen
+    seen = set()
+    # estimate sizeof object without __sizeof__
+    default_size = getsizeof(0)
 
     def sizeof(o):
         if id(o) in seen:       # do not double count the same object
@@ -53,5 +56,5 @@ def total_size(o, handlers={}, verbose=False):
 ##### Example call #####
 
 if __name__ == '__main__':
-    d = dict(a=1, b=2, c=3, d=[4,5,6,7], e='a string of chars')
+    d = dict(a=1, b=2, c=3, d=[4, 5, 6, 7], e='a string of chars')
     print(total_size(d, verbose=False))
