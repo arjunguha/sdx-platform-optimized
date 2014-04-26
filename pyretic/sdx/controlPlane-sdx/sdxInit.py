@@ -80,6 +80,7 @@ def sdx_init(ntot, nprefixes, nfields, fmult, q=None):
         Compile participant's policies without any composition. Its an inexpensive step
         which updates the cache expediting the compilation of the composed policies.
     """
+    print "Composing the augmented policy"
     compile_Policies(participants)
 
     """

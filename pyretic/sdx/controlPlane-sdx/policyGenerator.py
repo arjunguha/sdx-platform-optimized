@@ -12,7 +12,7 @@ import multiprocessing as mp
 import copy
 
 verify = False
-debug = False
+debug = True
 uniformRIB = True
 
 headerFields = ['dstport', 'srcport', 'srcip']
@@ -70,8 +70,6 @@ def normalizePrefixSets(sdx, nparts, fracPG):
 def divideEyeballFORcontent(n1, n2, n3):
     tmp = range(1, n1 + 1)
     div = int(float(len(tmp)) / (n3 - n2))
-    if debug:
-        print "new div", div
     eyeballFORcontent = {}
     kys = range(n2 + 1, n3)
     for i in kys:
@@ -260,14 +258,14 @@ def generatePolicies(sdx, participants, ntot, nmult, partTypes, frand, nfields,
 
         policy = drop
         if debug:
-            print 'participant: ', participant.id_,
+            print 'participant: ', participant.id_
         sdx.participant_2_port[participant.id_][participant.id_]
 
         inbound[participant.id_] = []
         if int(participant.id_) <= n1:
 
             if debug:
-                print "policies for Tier1 ISPs"
+                print "Generating policies for Tier1 ISPs"
 
             # Inbound policies for traffic coming from top content folks
             topContent = random.sample(range(n2 + 1, n3 + 1), nSample)
@@ -290,7 +288,7 @@ def generatePolicies(sdx, participants, ntot, nmult, partTypes, frand, nfields,
 
         elif int(participant.id_) > n1 and int(participant.id_) <= n2:
             if debug:
-                print "policies for Tier 2 ISPs"
+                print "Generating policies for Tier 2 ISPs"
 
             # inbound policies for few top content participants
             topContent = random.sample(range(n2 + 1, n3 + 1), nSample)
@@ -326,7 +324,7 @@ def generatePolicies(sdx, participants, ntot, nmult, partTypes, frand, nfields,
 
         elif int(participant.id_) > n2 and int(participant.id_) <= n3:
             if debug:
-                print "policies for content providers"
+                print "Generating policies for content providers"
 
             # outbound policies for top eyeballs
             topeyeballs = eyeballFORcontent[int(participant.id_)]
@@ -363,7 +361,7 @@ def generatePolicies(sdx, participants, ntot, nmult, partTypes, frand, nfields,
 
         else:
             if debug:
-                print "policies for others"
+                print "Generating policies for others"
 
             # These non-important members will write default policies
             # Transform virtual port to one of their physical ports
@@ -384,8 +382,7 @@ def generatePolicies(sdx, participants, ntot, nmult, partTypes, frand, nfields,
         policy = getDisjointPolicies(policyDict)
 
         if debug:
-            print "Part 2 pg: ", sdx.part2pg[participant.id_], len(sdx.part2pg[participant.id_])
-        if debug:
+            print "Generated policy: "
             print policy
 
         participant.policies = policy

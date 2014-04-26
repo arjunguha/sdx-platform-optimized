@@ -539,7 +539,7 @@ def vnh_assignment(sdx, participants):
     if debug==True: print 'After Set operations: ',part_2_prefix_updated
     mdsTime=time.time()-start
     nVNHs=len(lcs)
-    print "MDS time: ",mdsTime
+    print "time for evaluating 'Minimum Disjoint Set': ",mdsTime
     sdx.part_2_prefix_lcs = part_2_prefix_updated
     #print "After MDS: ",len(lcs),lcs
     sdx.lcs_old = lcs

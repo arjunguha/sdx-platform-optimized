@@ -128,7 +128,10 @@ def getMacList(VNH_2_IP,VNH_2_MAC):
 
 ### Main ###
 def main():    
+    """
     p=SDX_Policies()
     ip_mac_list=getMacList(p.sdx.VNH_2_IP,p.sdx.VNH_2_mac)
     print "ip_mac_list: ",ip_mac_list
     return if_(ARP, arp(ip_mac_list), if_(BGP, identity, p)) >> mac_learner()
+    """
+    return mac_learner()

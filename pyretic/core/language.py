@@ -309,11 +309,13 @@ class match(Filter):
             return self.intersect(pol)
         else:
             return super(match,self).__and__(pol)
-
+    
+    """
     ### hdict : unit -> int
     def __hash__(self):
         return hdict(self.map)
-
+    """
+    
     def covers(self,other):
         # Return identity if self matches every packet that other matches (and maybe more).
         # eg. if other is specific on any field that self lacks.

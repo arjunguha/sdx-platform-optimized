@@ -180,9 +180,11 @@ def disjoint_inport_vnhCompose(sdx):
             
             """ Compose the inbound policies matching on virtual/physical switch (not fully implemented) """
             tmp_policy_participant = match_outports >> inboundPolicy >> match_outports
+            """
             if debug: 
                 print "Inbound policy for participant: ",participant.id_
                 print tmp_policy_participant.compile()
+            """
             lowerPolicies.append(tmp_policy_participant)
 
     # for now ignore the inbound policies
