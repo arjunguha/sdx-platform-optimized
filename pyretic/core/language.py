@@ -1024,6 +1024,7 @@ class sequential(CombinatorPolicy):
         :rtype: Classifier
         """
         global hash_time
+        #compile_debug = True
         if compiler_optimize==True:
             classifier_tmp=[]
             if compile_debug==True: print ">>: Compile called for",self.policies,len(self.policies)
