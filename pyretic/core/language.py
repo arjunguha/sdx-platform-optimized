@@ -899,6 +899,9 @@ class disjoint(CombinatorPolicy):
         if len(policies) == 0:
             raise TypeError
         super(disjoint, self).__init__(policies)
+        
+    # Todo: __rshift__(), __eval__()
+    
     
     def compile(self):
         """
@@ -1342,7 +1345,7 @@ class egress_network(DynamicFilter):
 
 def ast_fold(fun, acc, policy):
     import pyretic.lib.query as query
-    #print "lang: ",policy
+    #print "lang: ",type(policy), policy
     if (  policy == identity or
           policy == drop or
           isinstance(policy,match) or
@@ -1354,7 +1357,8 @@ def ast_fold(fun, acc, policy):
           isinstance(policy,parallel) or
           isinstance(policy,union) or
           isinstance(policy,sequential) or
-          isinstance(policy,intersection)):
+          isinstance(policy,intersection) or
+          isinstance(policy,disjoint)):
         acc = fun(acc,policy)
         for sub_policy in policy.policies:
             acc = ast_fold(fun,acc,sub_policy)
@@ -1367,6 +1371,7 @@ def ast_fold(fun, acc, policy):
           isinstance(policy,query.packets)):
         acc = fun(acc,policy)
         return ast_fold(fun,acc,policy.policy)
+
     else:
         raise NotImplementedError
     
