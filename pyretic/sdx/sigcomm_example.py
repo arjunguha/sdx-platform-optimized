@@ -109,7 +109,7 @@ def sigcomm_example():
     flow_rules = composed_policy.compile()
     time_compile = time.time()-start
     print "Compiled the composed policy", time_compile,"seconds"
-    print flow_rules
+    #print flow_rules
     
     return composed_policy
 

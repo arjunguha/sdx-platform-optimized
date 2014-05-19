@@ -48,6 +48,7 @@ import pyretic.sdx.QuaggaInterface.quagga_interface as qI
 ## General imports
 import os
 import thread,threading
+from sigcomm_example import *
 from multiprocessing import Process, Queue
 
 cwd = os.getcwd()
@@ -134,4 +135,6 @@ def main():
     print "ip_mac_list: ",ip_mac_list
     return if_(ARP, arp(ip_mac_list), if_(BGP, identity, p)) >> mac_learner()
     """
-    return mac_learner()
+    #return mac_learner()
+    out_policy = sigcomm_example()
+    return out_policy
