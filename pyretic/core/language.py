@@ -900,7 +900,25 @@ class disjoint(CombinatorPolicy):
             raise TypeError
         super(disjoint, self).__init__(policies)
         
-    # Todo: __rshift__(), __eval__()
+    # Todo: __rshift__()? Do we need it? Not sure
+    def eval(self, pkt):
+        """
+        evaluates to the set union of the evaluation
+        of self.policies on pkt
+
+        :param pkt: the packet on which to be evaluated
+        :type pkt: Packet
+        :rtype: set Packet
+        """
+        # Very similat to Parallel, only difference that it will only have one output pkt.
+        # Todo: Assert that it return only one packet as output
+        output = set()
+        for policy in self.policies:
+            output |= (policy.eval(pkt))
+        #print self.policies, pkt
+        
+        #print output
+        return output
     
     
     def compile(self):
