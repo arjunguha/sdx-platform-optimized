@@ -65,7 +65,9 @@ def get_prefix(policy, plist, pfxlist, part, sdx, acc=[]):
         elif isinstance(policy, fwd):
             if len(acc) == 0:
                 print plist
-                peer = get_fwdPeer(plist[part], policy.outport)
+                #peer = get_fwdPeer(plist[part], policy.outport)
+                print sdx.port_2_participant
+                peer = sdx.port_2_participant[policy.outport]
                 acc = bgp_get_announced_routes(sdx, peer)
                 print peer, acc
             pfxlist.append(acc)   
@@ -306,7 +308,8 @@ def step5a_expand_policy_with_prefixes(policy, participant, plist, sdx, acc=[]):
             acc.append('dstip')
         elif isinstance(policy, fwd):            
             if 'dstip' not in acc:    
-                return match_prefixes_set(bgp_get_announced_routes(sdx, get_fwdPeer(plist[participant], policy.outport))) >> policy
+                
+                return match_prefixes_set(bgp_get_announced_routes(sdx, sdx.port_2_participant[policy.outport])) >> policy
         return policy
     
 def step5a(policy, participant, participant_list, sdx, include_default_policy=False):

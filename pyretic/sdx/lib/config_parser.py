@@ -30,6 +30,8 @@ def generatePeeringMatrix(n,ratio):
                 pm[row].append(getPeering(ratio))
             else:
                 pm[row].append(1)
+            if row==0 or col==0:
+                pm[row].append(1)
     return pm
 
 
@@ -50,14 +52,14 @@ def generate_sdxglobal(ntot,portDistr,peeringMatrix,iplist,macinit):
         for i in filter(lambda x:(x!=ind)& (peeringMatrix[ind-1][x-1]!=0),range(1,ntot+1)):
             peers.append(str(i))
         
-        print ind,peers
+        #print ind,peers
         
         ports=[]
         nports=getNports(ntot,portDistr,ind)
-        print ind,nports        
+        #print ind,nports        
         for i in range(nports):
             # TODO: Get mac-addresses for physical ports from MiniNExT?  
-            count = ind if i==0 else ((ind-1)*nports+i+1+ntot)
+            count = ind if i==0 else (ind*ntot+i)
             ip,mac=str(iplist[count]),str(EUI(int(EUI(macinit))+count))
             ports.append({'Id':count,'MAC':mac,'IP':ip})                   
                 
@@ -105,7 +107,7 @@ def update_params(sdx,iplist,macinit):
             participant_2_port[participant.id_][peer]=[participant.peers[peer].participant.phys_ports[0].id_]
             
     sdx.participant_2_port = participant_2_port
-    sdx.port_2_participant = port_2_participant
+    #sdx.port_2_participant = port_2_participant
     
     """ Update the VNH parameters"""
     sdx.VNH_2_IP['VNH'] = iplist
@@ -131,17 +133,24 @@ def sdx_parse_config(config_file,sdx_autoconf,auto):
     ''' 
         Create SDX environment ...
     '''
+    port_2_participant = {}
     for participant_name in sdx_config:
         
         ''' Adding physical ports '''
         participant = sdx_config[participant_name]
         sdx_ports[participant_name] = [PhysicalPort(id_=participant["Ports"][i]['Id'],mac=MAC(participant["Ports"][i]["MAC"]),ip=IP(participant["Ports"][i]["IP"])) for i in range(0, len(participant["Ports"]))]     
-        print sdx_ports[participant_name]
+        port_2_participant[participant["Ports"][i]['Id']] = participant_name
+        
         ''' Adding virtual port '''
-        sdx_vports[participant_name] = VirtualPort(participant=participant_name) #Check if we need to add a MAC here
+        sdx_vports[participant_name] = VirtualPort(id_=participant["Virtual_Port"], participant=participant_name) #Check if we need to add a MAC here
+        port_2_participant[participant["Virtual_Port"]] = participant_name
+        #print sdx_ports[participant_name], sdx_vports[participant_name].participant
+    
     
     sdx.sdx_ports = sdx_ports 
-
+    sdx.sdx_vports = sdx_vports
+    sdx.port_2_participant = port_2_participant
+    print sdx.port_2_participant
     
     for participant_name in sdx_config:
         peers = {}
@@ -157,12 +166,11 @@ def sdx_parse_config(config_file,sdx_autoconf,auto):
         sdx.add_participant(sdx_participant,participant_name)
     
     ''' Update other SDX platform params like port_2_participant, participant_2_port etc..'''
-    update_params(sdx,iplist,macinit)    
-    
+    update_params(sdx,iplist,macinit) 
     return sdx
 
 
 if __name__ == '__main__':
-    sdx_parse_config('/home/sdx/pyretic-fork/pyretic/pyretic/sdx/sdx_global.cfg','/home/sdx/pyretic-fork/pyretic/pyretic/sdx/sdx_auto.cfg',True)
+    sdx_parse_config('/home/sdx/pyretic-fork/pyretic/pyretic/sdx/sdx_global.cfg','/home/sdx/pyretic-fork/pyretic/pyretic/sdx/sdx_auto.cfg',False)
 
     

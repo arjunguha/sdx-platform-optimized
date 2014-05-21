@@ -9,33 +9,45 @@ from pyretic.sdx.sdxlib import *
 from pyretic.sdx.lib.config_parser import *
 from importlib import import_module
 
-def sdx_parse_policies(policy_file,sdx):
-        
-    sdx_policies = json.load(open(policy_file,'r'))  
-    ''' 
-        Get participants policies
-    '''
-    for participant_name in sdx_policies:
-        participant = sdx.participants[participant_name]
-        policy_modules = [import_module(sdx_policies[participant_name][i]) 
-                          for i in range(0, len(sdx_policies[participant_name]))]
-        
-        participant.policies = parallel([
-             policy_modules[i].policy(participant, sdx) 
-             for i in range(0, len(sdx_policies[participant_name]))])  
-        print "Before pre",participant.policies
-        # translate these policies for VNH Assignment
-        participant.original_policies=participant.policies
-        participant.policies=pre_VNH(participant.policies,sdx,participant_name,participant)
-        
-        print "After pre: ",participant.policies
-    #print sdx.out_var_to_port[u'outB_1'].id_  
-       
+def sdx_parse_policies(policy_file,sdx,event_source):
+    print "\n sdx_parse_policies called with arg: ",event_source,"\n"
+    
+    # These steps explicit for initialization phase
+    if event_source=='init':
+        print " Explicitly read participant's policies"
+        sdx_policies = json.load(open(policy_file,'r'))  
+        ''' 
+            Get participants policies
+        '''
+        for participant_name in sdx_policies:
+            participant = sdx.participants[participant_name]
+            policy_modules = [import_module(sdx_policies[participant_name][i]) 
+                              for i in range(0, len(sdx_policies[participant_name]))]
+            
+            participant.policies = parallel([
+                 policy_modules[i].policy(participant, sdx) 
+                 for i in range(0, len(sdx_policies[participant_name]))])
+            
+            participant.original_policies=participant.policies
+            # translate these policies for VNH Assignment
+            print "Before pre",participant.policies 
+            participant.original_policies=participant.policies
+            participant.policies=pre_VNH(participant.policies,sdx,participant_name,participant)
+            print "After pre: ",participant.id_,participant.policies
+            
+    else:    
+        for participant in sdx.participants:
+            #print "Before pre",participant.policies            
+            # translate these policies for VNH Assignment
+            participant.original_policies=participant.policies
+            participant.policies=pre_VNH(participant.policies,sdx,participant_name,participant)
+            #print "After pre: ",participant.policies
+ 
     # Virtual Next Hop Assignment
     vnh_assignment(sdx) 
     print "Completed VNH Assignment"
     # translate these policies post VNH Assignment
-    
+    """
     classifier=[]
     for participant_name in sdx.participants:
         sdx.participants[participant_name].policies=post_VNH(sdx.participants[participant_name].policies,
@@ -44,8 +56,8 @@ def sdx_parse_policies(policy_file,sdx):
         start_comp=time.time()
         classifier.append(sdx.participants[participant_name].policies.compile())
         print participant_name, time.time() - start_comp, "seconds"
-
-
+    """
+    
 def sdx_parse_announcements(announcement_file,sdx):
         
     sdx_announcements = json.load(open(announcement_file,'r'))  

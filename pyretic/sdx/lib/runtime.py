@@ -21,7 +21,7 @@ from pyretic.sdx.lib.compilation import *
 
 
 # Generate SDX configuration automatically
-auto=True
+auto=False
 
 class SDXPolicy(DynamicPolicy):
     """Standard MAC-learning logic"""
@@ -31,7 +31,7 @@ class SDXPolicy(DynamicPolicy):
         print "Initialize SDX"
         super(SDXPolicy,self).__init__()        
         
-        print "SDX:",self.__dict__        
+        #print "SDX:",self.__dict__        
         
 
 class Runtime():
@@ -42,7 +42,7 @@ class Runtime():
         cwd = os.getcwd()
         sdx_autoconf=cwd+'/pyretic/sdx/sdx_auto.cfg'
         self.sdx = sdx_parse_config(cwd+'/pyretic/sdx/sdx_global.cfg',sdx_autoconf,auto)
-        print self.sdx.server
+        print "config parser completed "
         
         ''' Event handling for dynamic policy compilation '''  
         event_queue = Queue()
@@ -55,8 +55,7 @@ class Runtime():
         
         ''' Router Server interface thread '''
         # TODO: confirm if we need RIBs per participant or per peer!
-        rs = route_server(event_queue, ready_queue, self.sdx)
-        
+        rs = route_server(event_queue, ready_queue, self.sdx)        
         rs_thread = Thread(target=rs.start)
         rs_thread.daemon = True
         rs_thread.start()
@@ -66,26 +65,27 @@ class Runtime():
         #TODO: Should we send the loaded routes on bootup to the participants?
 
         
-    def update_policy(self):
+    def update_policy(self,event_source='init'):
         
-        # TODO: why are we running sdx_parse_polcieis for every update_policy (this is a serious bottleneck in policy compilation time) - MS
         cwd = os.getcwd()
         
-        sdx_parse_policies(cwd+'/pyretic/sdx/sdx_policies.cfg',self.sdx)
+        print "Calling policy parser"
+        sdx_parse_policies(cwd+'/pyretic/sdx/sdx_policies.cfg',self.sdx,event_source)
         
         ''' Get updated policy '''
         self.policy = sdx_platform(self.sdx)
         
-        print 'Final Policy'
-        print self.policy
+        #print 'Final Policy'
+        #print self.policy
         
         ''' Get updated IP to MAC list '''
         # TODO: Maybe we won't have to update it that often - MS
         #       Need efficient implementation of this ...
         self.arp_policy.mac_of = get_ip_mac_list(self.sdx.VNH_2_IP,self.sdx.VNH_2_MAC)
         
-        print 'Updated ARP Policy'
-        print self.arp_policy
+        
+        #print 'Updated ARP Policy'
+        #print self.arp_policy
         
 
 '''' Dynamic update policy handler '''
@@ -93,11 +93,6 @@ def dynamic_update_policy_event_hadler(event_queue,ready_queue,update_policy):
     while True:
         event_source=event_queue.get()        
         ''' Compile updates '''
-        update_policy()        
+        update_policy(event_source)        
         if ('bgp' in event_source):
             ready_queue.put(event_source)
-
-        
-        
-        
-         
