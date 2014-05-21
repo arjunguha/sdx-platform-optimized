@@ -22,10 +22,12 @@ class SDX(object):
         self.participants = {}
         
         self.sdx_ports={}
+        self.sdx_vports={}
         self.participant_id_to_in_var = {}
         self.out_var_to_port = {}
         self.port_id_to_out_var = {}        
         self.participant_2_port={}
+        self.port_2_participant = {}
 
         
         VNH_2_pfx = None
@@ -67,9 +69,9 @@ class SDX(object):
     
     def fwd(self, port):
         if isinstance(port, PhysicalPort):
-            return modify(state=self.port_id_to_out_var[port.id_], dstmac=port.mac)
+            return modify(dstmac=port.mac) >> fwd(port.id_)
         else:
-            return modify(state=self.participant_id_to_in_var[port.participant.id_])
+            return fwd(port.id_)
 
 
 if __name__ == '__main__':
