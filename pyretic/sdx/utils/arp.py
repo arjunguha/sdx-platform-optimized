@@ -43,7 +43,7 @@ from pyretic.lib.query import *
 
 from pyretic.modules.mac_learner import mac_learner
 
-VERBOSE_LEVEL = 1
+VERBOSE_LEVEL = 0
 ARP = match(ethtype=ARP_TYPE)
 REQUEST=1
 RESPONSE=2
