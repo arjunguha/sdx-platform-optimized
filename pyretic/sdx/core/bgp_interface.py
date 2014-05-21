@@ -59,7 +59,7 @@ def bgp_get_announced_routes(sdx,participant_name):
         prefixes_announced={'pg1':{
                                    'A':['p0'],
                                    'B':['p1','p2','p4'],
-                                   'C':['p1','p2','p3','p4']
+                                   'C':['p1','p2','p3','p4','p5','p6']
                                    }
                             }
         announced_routes = prefixes_announced['pg1'][participant_name]

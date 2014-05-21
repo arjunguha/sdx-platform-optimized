@@ -27,7 +27,6 @@ class SDX(object):
         self.out_var_to_port = {}
         self.port_id_to_out_var = {}        
         self.participant_2_port={}
-        self.port_2_participant = {}
 
         
         VNH_2_pfx = None

@@ -34,6 +34,7 @@
 #        http://www.gnu.org/licenses/.
 #
 
+"""
 ## Pyretic-specific imports
 from pyretic.lib.corelib import *
 from pyretic.lib.std import *
@@ -42,6 +43,8 @@ from pyretic.lib.std import *
 from pyretic.sdx.lib.common import *
 from pyretic.sdx.lib.bgp_interface import *
 from pyretic.sdx.lib.language import *
+"""
+from pyretic.sdx.lib.corelib import *
 
 ## General imports
 import json
