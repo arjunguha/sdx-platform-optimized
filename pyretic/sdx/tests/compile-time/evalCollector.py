@@ -24,8 +24,8 @@ def send_email(option):
 
     gmail_user = "glex.qsd@gmail.com"
     gmail_pwd = "xxx"
-    FROM = 'glex.qsd@@gmail.com'
-    TO = ['glex.qsd@gmail.com'] #must be a list
+    FROM = 'arjun.guha@gmail.com'
+    TO = ['arjun.guha@gmail.com'] #must be a list
 
     SUBJECT = "SDX: "+str(option).upper()+" Benchmarking results"
     TEXT = "Completed "+str(option).upper()+" Benchmarking at: "+str(current_time)
