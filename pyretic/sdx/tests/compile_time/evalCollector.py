@@ -107,9 +107,9 @@ def main(option):
                     with open(dname, 'w') as outfile:
                         json.dump(data,outfile,ensure_ascii=True,encoding="ascii")
                     print data
-                    msg='MATTAPAN: Completed Init Compile for '+str(ntot)+' participants '+str(npfx)+' prefix sets iteration '+str(dp)+':'+str(nRules)+','+str(compileTime)+','+str(augmentTime)+','+str(cacheSize)
+                    #msg='MATTAPAN: Completed Init Compile for '+str(ntot)+' participants '+str(npfx)+' prefix sets iteration '+str(dp)+':'+str(nRules)+','+str(compileTime)+','+str(augmentTime)+','+str(cacheSize)
 
-                    send_email(msg)
+                    #send_email(msg)
 
 
 

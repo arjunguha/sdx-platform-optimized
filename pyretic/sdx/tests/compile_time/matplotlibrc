@@ -434,6 +434,6 @@ xtick.major.width: 0.25
 xtick.minor.width: 0.25
 ytick.major.width: 0.25
 ytick.minor.width: 0.25
-legend.numpoints: 1 
-examples.download : False  # False to bypass downloading mechanism
+legend.numpoints: 1
+# examples.download : False  # False to bypass downloading mechanism
 examples.directory : '/usr/share/matplotlib/sampledata'   # absolute directory to look in if download is false

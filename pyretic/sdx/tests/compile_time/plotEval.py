@@ -31,9 +31,9 @@ def restructureData(data):
     return data
 
 def main(option):
-    #dname='MDS_Fri24Jan2014051146.dat' 
+    #dname='MDS_Fri24Jan2014051146.dat'
     #dname='MDS_Fri24Jan2014060412.dat'
-    #dname='mdsTrace_Sat25Jan2014032939.dat' 
+    #dname='mdsTrace_Sat25Jan2014032939.dat'
     #dname='bgpUpdate_Sat25Jan2014101855.dat'
     #dname='bgpUpdate_Sat25Jan2014114145.dat'
     #dname='UPDATEDcompileTime_Sun26Jan2014194001.dat'
@@ -45,11 +45,11 @@ def main(option):
     dname='UPDATEDcompileTime_Wed29Jan2014023417.dat'
     dname='mdsTrace_Wed29Jan2014173721.dat'
     dname='bgpUpdate_Wed29Jan2014062818.dat'
-    
+
     if option=='initCompile':
-        print "plotting "+str(option)+" result" 
         print "plotting "+str(option)+" result"
-        dname='UPDATEDcompileTime_Wed29Jan2014023417.dat'
+        print "plotting "+str(option)+" result"
+        dname='foo'
         data=json.load(open(dname, 'r'))
         #data=restructureData(data)
         params=['nrules','cTime','augmentTime','cacheSize']
@@ -64,7 +64,7 @@ def main(option):
                 tmp={}
                 for hdr in v:
                     tmp[float(hdr)]=v[hdr]
-                v=tmp              
+                v=tmp
                 v.keys().sort()
                 xlab=v.keys()
                 print v.keys()
@@ -81,7 +81,7 @@ def main(option):
                         v[hdr]=tmp_dat
                     elif param=='nrules':
                         print 'nrules'
-                        for dat in v[hdr]:                            
+                        for dat in v[hdr]:
                             tmp_dat.append(int(float(dat)/1000))
                         v[hdr]=tmp_dat
                     total, average, median, standard_deviation, minimum, maximum, confidence=stats(v[hdr])
@@ -92,7 +92,7 @@ def main(option):
                 print "median: ",tmp_median
                 data[param][k]['median']=tmp_median
                 data[param][k]['stddev']=tmp_stddev
-                
+
             fig = plt.figure()
             ax = fig.add_subplot(1,1,1)
             color_n=['g','m','c','r','b','k','w']
@@ -104,7 +104,7 @@ def main(option):
             legnd=[]
             for k in leg:
                 #leg.append(float(k))
-                
+
                 legnd.append(''+str(int(k))+' Participants')
                 a=data[param][k]['median']
                 v=data[param][k]
@@ -123,13 +123,13 @@ def main(option):
             for k in data[param].keys():
                 p.append(p1[i][0])
                 i+=1
-            """    
+            """
             for tick in ax.xaxis.get_major_ticks():
                 tick.label.set_fontsize(24)
             for tick in ax.yaxis.get_major_ticks():
                 tick.label.set_fontsize(24)
             """
-            leg.sort() 
+            leg.sort()
             pl.legend((p),legnd,'upper left')
             pl.xlabel('Prefix Groups')
             pl.xlim(1,1010)
@@ -141,12 +141,12 @@ def main(option):
                 pl.ylabel('Time (seconds)')
                 ax.set_xlim(xmin=1)
                 #ax.set_ylim(ymin=-1)
-                
+
             elif param=='augmentTime':
                 pl.ylabel('Time (seconds)')
                 ax.set_xlim(xmin=1)
                 #ax.set_ylim(ymin=-1)
-                
+
             elif param=='nrules':
                 pl.ylabel(r'Flow Rules ($\times$ 1000)')
                 ax.set_xlim(xmin=1)
@@ -154,14 +154,14 @@ def main(option):
                 #pl.xlim(0,51)
                 #ax.set_ylim(ymin=1)
 
-            ax.yaxis.set_major_locator(my_locator)   
+            ax.yaxis.set_major_locator(my_locator)
             ax.grid(True)
             plt.tight_layout()
             plot_name=option+'_'+param+'.eps'
             plot_name_png=option+'_'+param+'.png'
             pl.savefig(plot_name)
             pl.savefig(plot_name_png)
-       
+
     elif option=='mdsScatter':
         print "plotting "+str(option)+" result"
         dname="mdsTrace_Wed29Jan2014193801.dat"
@@ -171,11 +171,11 @@ def main(option):
         xlab=[]
         for param in params:
             print "plotting for the param: ",param
-            
+
             inSize={}
             avgSize={}
             mdsTime={}
-            
+
 
             tplList=data[param]
             legnd=[]
@@ -192,8 +192,8 @@ def main(option):
                 inSize[tpl[0]].append(tpl[1]-2)
                 avgSize[tpl[0]].append(tpl[2])
                 mdsTime[tpl[0]].append(15*3.14*tpl[3]*tpl[3])
-            
-            legnd.sort(reverse=True)   
+
+            legnd.sort(reverse=True)
             fig = plt.figure(figsize=(12,12))
             ax = fig.add_subplot(1,1,1)
             color_n=['g','m','c','r','b','k','w']
@@ -201,18 +201,18 @@ def main(option):
             p1=[]
             i=0
             print inSize,avgSize,mdsTime
-            
+
             for leg in legnd:
                 p1.append([])
-    
-    
+
+
                 p1[i]=pl.scatter(inSize[leg],avgSize[leg],s=mdsTime[leg],c=color_n[i],linewidths=2,edgecolor='k',alpha=0.75)
                 p=[]
                 i+=1
-                
+
             i=0
 
-                
+
             for tick in ax.xaxis.get_major_ticks():
                 tick.label.set_fontsize(24)
             for tick in ax.yaxis.get_major_ticks():
@@ -222,14 +222,14 @@ def main(option):
             pl.ylabel('Average Size',fontsize=32)
                 #pl.xlim(0,51)
                 #ax.set_ylim(ymin=1)
-                
+
             ax.grid(True)
-            
+
             plot_name=option+'_'+param+'.eps'
             plot_name_png=option+'_'+param+'.png'
             pl.savefig(plot_name)
             pl.savefig(plot_name_png)
-    
+
     elif option=='bgpUpdateCDF':
         print "plotting "+str(option)+" result"
         dname='bgpUpdate_Wed29Jan2014062818.dat'
@@ -255,11 +255,11 @@ def main(option):
                 for elem in raw[key]:
                     tmp.append(elem*1000)
                 raw[key]=tmp
-                
+
                 raw[key].sort(reverse=True)
                 #print raw[key]
                 raw[key]=filter(lambda x: x<=1000,raw[key])
-                
+
                 num_bins=10000
                 counts, bin_edges = np.histogram(raw[key],bins=num_bins,normed=True)
                 print bin_edges
@@ -267,19 +267,19 @@ def main(option):
                 scale = 1.0/cdf[-1]
                 cdf=cdf*scale
                 print cdf
-                
+
                 p1.append([])
                 legnd.append(''+str(int(key))+' Participants')
-                
+
                 p1[i]=pl.plot(bin_edges[1:],cdf,label=key,color=color_n[i],linestyle=linestyles[i])
                 i+=1
-                
+
             i=0
             p=[]
             for k in data[param].keys():
                 p.append(p1[i][0])
                 i+=1
-            """   
+            """
             for tick in ax.xaxis.get_major_ticks():
                 tick.label.set_fontsize(24)
             for tick in ax.yaxis.get_major_ticks():
@@ -292,13 +292,13 @@ def main(option):
             #pl.ylabel('CDF',fontsize=32)
             #pl.xlim(0,51)
             ax.set_ylim(ymin=0.01)
-                
+
             ax.grid(True)
             plt.tight_layout()
             plot_name=option+'_'+param+'.eps'
             plot_name_png=option+'_'+param+'.png'
             pl.savefig(plot_name)
-            pl.savefig(plot_name_png) 
+            pl.savefig(plot_name_png)
 
     elif option=='bgpUpdate':
         print "plotting "+str(option)+" result"
@@ -317,7 +317,7 @@ def main(option):
                 tmp={}
                 for hdr in v:
                     tmp[float(hdr)]=v[hdr]
-                v=tmp              
+                v=tmp
                 v.keys().sort()
                 xlab=v.keys()
                 print v.keys()
@@ -334,7 +334,7 @@ def main(option):
                 print "median: ",tmp_median
                 data[param][k]['median']=tmp_median
                 data[param][k]['stddev']=tmp_stddev
-                
+
             fig = plt.figure()
             ax = fig.add_subplot(1,1,1)
             color_n=['g','m','c','r','b','k','w']
@@ -346,7 +346,7 @@ def main(option):
             legnd=[]
             for k in leg:
                 #leg.append(float(k))
-                
+
                 legnd.append(''+str(int(k))+' Participants')
                 a=data[param][k]['median']
                 v=data[param][k]
@@ -366,13 +366,13 @@ def main(option):
             for k in data[param].keys():
                 p.append(p1[i][0])
                 i+=1
-            """   
+            """
             for tick in ax.xaxis.get_major_ticks():
                 tick.label.set_fontsize(24)
             for tick in ax.yaxis.get_major_ticks():
                 tick.label.set_fontsize(24)
             """
-            leg.sort() 
+            leg.sort()
             pl.legend((p),legnd,'upper left')
             pl.xlabel('Burst Size (BGP Updates)')
             if param=='deltaRules':
@@ -384,14 +384,14 @@ def main(option):
                 #pl.xlim(0,51)
                 #ax.set_ylim(ymin=0)
 
-            ax.yaxis.set_major_locator(my_locator)    
+            ax.yaxis.set_major_locator(my_locator)
             ax.grid(True)
             plt.tight_layout()
             plot_name=option+'_'+param+'.eps'
             plot_name_png=option+'_'+param+'.png'
             pl.savefig(plot_name)
             pl.savefig(plot_name_png)
-        
+
     elif option=='MDS':
         print "plotting "+str(option)+" result"
         #dname="composeBM_matapan.dat"
@@ -409,7 +409,7 @@ def main(option):
                 tmp={}
                 for hdr in v:
                     tmp[float(hdr)]=v[hdr]
-                v=tmp              
+                v=tmp
                 v.keys().sort()
                 xlab=v.keys()
                 print v.keys()
@@ -423,7 +423,7 @@ def main(option):
                 print "median: ",tmp_median
                 data[param][k]['median']=tmp_median
                 data[param][k]['stddev']=tmp_stddev
-                
+
             fig = plt.figure(figsize=(12,12))
             ax = fig.add_subplot(1,1,1)
             color_n=['g','m','c','r','b','k','w']
@@ -435,7 +435,7 @@ def main(option):
             legnd=[]
             for k in leg:
                 #leg.append(float(k))
-                
+
                 #legnd.append('N= '+str(int(k)))
                 legnd.append(''+str(int(k))+' Participants')
                 a=data[param][k]['median']
@@ -455,12 +455,12 @@ def main(option):
             for k in data[param].keys():
                 p.append(p1[i][0])
                 i+=1
-                
+
             for tick in ax.xaxis.get_major_ticks():
                 tick.label.set_fontsize(24)
             for tick in ax.yaxis.get_major_ticks():
                 tick.label.set_fontsize(24)
-            leg.sort() 
+            leg.sort()
             pl.legend((p),legnd,'upper left',prop={'size':24})
             pl.xlabel(' Prefixes',fontsize=32)
             if param=='nvnhs':
@@ -476,14 +476,14 @@ def main(option):
                 pl.xlim(0,10000+100)
                 ax.set_ylim(ymin=1)
                 #pl.ylim(-10,500)
-                
+
             ax.grid(True)
-            
+
             plot_name=option+'_'+param+'.eps'
             plot_name_png=option+'_'+param+'.png'
             pl.savefig(plot_name)
             pl.savefig(plot_name_png)
-            
+
     elif option=='MDS-decix':
         print "plotting "+str(option)+" result"
         #dname="composeBM_matapan.dat"
@@ -501,7 +501,7 @@ def main(option):
                 tmp={}
                 for hdr in v:
                     tmp[float(hdr)]=v[hdr]
-                v=tmp              
+                v=tmp
                 v.keys().sort()
                 xlab=v.keys()
                 print v.keys()
@@ -515,7 +515,7 @@ def main(option):
                 print "median: ",tmp_median
                 data[param][k]['median']=tmp_median
                 data[param][k]['stddev']=tmp_stddev
-                
+
             fig = plt.figure(figsize=(12,12))
             ax = fig.add_subplot(1,1,1)
             color_n=['g','m','c','r','b','k','w']
@@ -531,7 +531,7 @@ def main(option):
             legnd=[]
             for k in leg:
                 #leg.append(float(k))
-                
+
                 legnd.append('Participants='+str(int(k))+'')
                 k=unicode(k)
                 a=data[param][k]['median']
@@ -551,12 +551,12 @@ def main(option):
             for k in data[param].keys():
                 p.append(p1[i][0])
                 i+=1
-                
+
             for tick in ax.xaxis.get_major_ticks():
                 tick.label.set_fontsize(24)
             for tick in ax.yaxis.get_major_ticks():
                 tick.label.set_fontsize(24)
-            leg.sort() 
+            leg.sort()
             pl.legend((p),legnd,'upper left',prop={'size':24})
             pl.xlabel(' Prefixes',fontsize=32)
             if param=='nvnhs':
@@ -569,9 +569,9 @@ def main(option):
                 #pl.xlim(0,10000+100)
                 ax.set_ylim(ymin=1)
                 ax.set_xlim(xmin=0)
-                
+
             ax.grid(True)
-            
+
             plot_name=option+'_'+param+'.eps'
             plot_name_png=option+'_'+param+'.png'
             pl.savefig(plot_name)
@@ -593,7 +593,7 @@ def main(option):
                 tmp={}
                 for hdr in v:
                     tmp[float(hdr)]=v[hdr]
-                v=tmp              
+                v=tmp
                 v.keys().sort()
                 xlab=v.keys()
                 print v.keys()
@@ -607,7 +607,7 @@ def main(option):
                 print "median: ",tmp_median
                 data[param][k]['median']=tmp_median
                 data[param][k]['stddev']=tmp_stddev
-                
+
             fig = plt.figure()
             ax = fig.add_subplot(1,1,1)
             color_n=['g','m','c','r','b','k','w']
@@ -628,7 +628,7 @@ def main(option):
             leg=filter(lambda x:x<=150,leg)
             for k in leg:
                 #leg.append(float(k))
-                
+
                 legnd.append(''+str(int(k))+' Participants')
                 k=unicode(k)
                 a=data[param][k]['median']
@@ -648,14 +648,14 @@ def main(option):
             for k in leg:
                 p.append(p1[i][0])
                 i+=1
-            """    
+            """
             for tick in ax.xaxis.get_major_ticks():
                 tick.label.set_fontsize(24)
             for tick in ax.yaxis.get_major_ticks():
                 tick.label.set_fontsize(24)
             """
-            leg.sort() 
-            
+            leg.sort()
+
             pl.xlabel('Prefixes')
             #pl.xlim(0,26)
             if param=='nvnhs':
@@ -670,16 +670,16 @@ def main(option):
                 #pl.xlim(0,10000+100)
                 ax.set_ylim(ymin=1)
                 ax.set_xlim(xmin=0)
-                
-            ax.yaxis.set_major_locator(my_locator) 
-            #ax.xaxis.set_major_locator(my_locator)    
+
+            ax.yaxis.set_major_locator(my_locator)
+            #ax.xaxis.set_major_locator(my_locator)
             ax.grid(True)
-            plt.tight_layout()            
+            plt.tight_layout()
             plot_name=option+'_'+param+'.eps'
             plot_name_png=option+'_'+param+'.png'
             pl.savefig(plot_name)
-            pl.savefig(plot_name_png)   
-                
+            pl.savefig(plot_name_png)
+
     elif option=='MDS-amsix':
         print "plotting "+str(option)+" result"
         dname='mdsTrace_Wed29Jan2014195955.dat'
@@ -698,7 +698,7 @@ def main(option):
                     tmp={}
                     for hdr in v:
                         tmp[float(hdr)]=v[hdr]
-                    v=tmp              
+                    v=tmp
                     v.keys().sort()
                     xlab=filter(lambda x: x>=5000,v.keys())
 
@@ -713,7 +713,7 @@ def main(option):
                     print "median: ",tmp_median
                     data[param][k]['median']=tmp_median
                     data[param][k]['stddev']=tmp_stddev
-            bubbleSize=getBsize(data)  
+            bubbleSize=getBsize(data)
             fig = plt.figure(figsize=(12,12))
             ax = fig.add_subplot(1,1,1)
             color_n=['g','m','c','r','b','k','w']
@@ -745,23 +745,23 @@ def main(option):
                 p1[i]=pl.plot(xlab,a,markerfacecolor=color_n[i],markeredgecolor='none',
                               color='none',markersize=20,marker='o',linewidth=2.0)
                 pl.scatter(xlab,a,s=bubbleSize[int(k)],c=color_n[i],linewidths=2,edgecolor='none',alpha=1.0)
-                
-                
-                
+
+
+
                 #pl.text(xlab[int(float(len(xlab)/2))],20+a[int(float(len(a)/2))],'frac= '+str(k),fontsize=20,horizontalalignment='center')
                 i+=1
-            
+
             p=[]
             i=0
             for k in data[param].keys():
                 p.append(p1[i][0])
                 i+=1
-            
+
             for tick in ax.xaxis.get_major_ticks():
                 tick.label.set_fontsize(24)
             for tick in ax.yaxis.get_major_ticks():
                 tick.label.set_fontsize(24)
-            leg.sort() 
+            leg.sort()
             #pl.legend((p),legnd,'upper left',prop={'size':32})
             pl.legend((p),legnd,'upper left',prop={'size':24})
             pl.xlabel('# Prefixes',fontsize=32)
@@ -775,14 +775,14 @@ def main(option):
                 #pl.xlim(0,10000+100)
                 ax.set_ylim(ymin=1)
                 ax.set_xlim(xmin=0)
-                
+
             ax.grid(True)
-            
+
             plot_name=option+'_'+param+'.eps'
             plot_name_png=option+'_'+param+'.png'
             pl.savefig(plot_name)
             pl.savefig(plot_name_png)
- 
+
     elif option=='prefixBM':
         print "plotting "+str(option)+" result"
         #dname="composeBM_matapan.dat"
@@ -800,7 +800,7 @@ def main(option):
                 tmp={}
                 for hdr in v:
                     tmp[float(hdr)]=v[hdr]
-                v=tmp              
+                v=tmp
                 v.keys().sort()
                 xlab=v.keys()
                 print v.keys()
@@ -814,7 +814,7 @@ def main(option):
                 print "median: ",tmp_median
                 data[param][k]['median']=tmp_median
                 data[param][k]['stddev']=tmp_stddev
-                
+
             fig = plt.figure(figsize=(12,12))
             ax = fig.add_subplot(1,1,1)
             color_n=['g','m','c','r','b','k','w']
@@ -845,32 +845,32 @@ def main(option):
             for k in data[param].keys():
                 p.append(p1[i][0])
                 i+=1
-                
+
             for tick in ax.xaxis.get_major_ticks():
                 tick.label.set_fontsize(24)
             for tick in ax.yaxis.get_major_ticks():
                 tick.label.set_fontsize(24)
-            leg.sort() 
+            leg.sort()
             pl.legend((p),legnd,'upper left',prop={'size':32})
             pl.xlabel('# Prefixes',fontsize=32)
             if param=='#vnhs':
                 pl.ylabel('# Prefix Groups',fontsize=32)
                 pl.xlim(0,10000+100)
                 ax.set_ylim(ymin=1)
-                #pl.ylim(-10,500)                
-            ax.grid(True)            
+                #pl.ylim(-10,500)
+            ax.grid(True)
             plot_name=option+'_'+param+'.eps'
             plot_name_png=option+'_'+param+'.png'
             pl.savefig(plot_name)
             pl.savefig(plot_name_png)
-            
-            
+
+
 def getBsize(data):
     bsize={}
     pfxes=[]
     for tpl in data['scatter']:
         pfx=tpl[0]
-        if pfx>=5000:        
+        if pfx>=5000:
             part=getNear(tpl[1]-2,[50,100,150,200])
             size=tpl[2]
             if part not in bsize:
@@ -891,9 +891,9 @@ def getBsize(data):
         final[k]=[]
         for pfx in pfxes:
             final[k].append(bsize[k][pfx])
-            
+
     return final
-        
+
 def getNear(a,lst):
     diff=1000
     out=0
@@ -902,7 +902,7 @@ def getNear(a,lst):
         if tmp<diff and tmp>=0:
             diff=tmp
             out=elem
-    return out           
+    return out
 
 if __name__ == '__main__':
-    main(sys.argv[1]) 
+    main(sys.argv[1])
