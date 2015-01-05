@@ -500,7 +500,6 @@ def disjointDeCompose(sdx):
         """
 
     dPolicy=disjoint(disjointPolicies,lowerPolicies)
-    print "Dis"
     if debug==True: print "Compile the disjoint policies"
     start_comp=time.time()
     dclassifier=dPolicy.compile()
@@ -510,7 +509,6 @@ def disjointDeCompose(sdx):
     # Save the SDX's Classifier rules
 
 
-    print "Here we are"
     if debug==True: print nRules
     compileTime=time.time() - start_comp
     if debug==True: print  'Completed Disjoint Compilation ',compileTime, "seconds"
