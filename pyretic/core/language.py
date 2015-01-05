@@ -74,8 +74,8 @@ hash_time=0
 def global_add_cache(hdict,rules):
     tmp=Classifier(rules)
     add_cache[hdict]=tmp
-
-
+    
+    
 
 class Policy(object):
     """
@@ -143,15 +143,11 @@ class Policy(object):
     def __repr__(self):
         return "%s : %d" % (self.name(),id(self))
 
-    def to_netkat_json(self):
-        """Convert this Pyretic policy to NetKAT"""
-        raise NotImplementedError
-
 
 class Filter(Policy):
     """
     Abstact class for filter policies.
-    A filter Policy will always either
+    A filter Policy will always either 
 
     - pass packets through unchanged
     - drop them
@@ -222,7 +218,7 @@ def _intersect_ip(ipfx, opfx):
     most_specific = None
     if (IPv4Network(ipfx) in IPv4Network(opfx)):
         most_specific = ipfx
-    elif (IPv4Network(opfx) in IPv4Network(ipfx)):
+    elif (IPv4Network(opfx) in IPv4Network(ipfx)): 
         most_specific = opfx
     return most_specific
 
@@ -340,10 +336,6 @@ class match(Filter):
 
     def __repr__(self):
         return "match: %s" % ' '.join(map(str,self.map.items()))
-
-    def to_netkat_json(self):
-        raise NotImplementedError
-
 
 @singleton
 class identity(Filter):
@@ -475,7 +467,7 @@ class modify(Policy):
 class Controller(Policy):
     def eval(self, pkt):
         return set()
-
+    
     def compile(self):
         r = Rule(identity, [Controller])
         self._classifier = Classifier([r])
@@ -486,7 +478,7 @@ class Controller(Policy):
 
     def __repr__(self):
         return "Controller"
-
+    
 
 # FIXME: Srinivas =).
 class Query(Filter):
@@ -513,7 +505,7 @@ class Query(Filter):
         with self.bucket_lock:
             self.bucket.add(pkt)
         return set()
-
+        
     ### register_callback : (Packet -> X) -> unit
     def register_callback(self, fn):
         self.callbacks.append(fn)
@@ -541,7 +533,7 @@ class FwdBucket(Query):
                 for callback in self.callbacks:
                     callback(pkt)
             self.bucket.clear()
-
+    
     def __repr__(self):
         return "FwdBucket"
 
@@ -567,7 +559,7 @@ class CountBucket(Query):
         self.byte_count_persistent = 0
         self.in_update_cv = Condition()
         self.in_update = False
-
+        
     def __repr__(self):
         return "CountBucket"
 
@@ -629,7 +621,7 @@ class CountBucket(Query):
         with self.in_update_cv:
             self.in_update = False
             self.in_update_cv.notify_all()
-
+        
     def add_match(self, m):
         """
         Add a match m to list of classifier rules to be queried for
@@ -832,12 +824,12 @@ class parallel(CombinatorPolicy):
                     out=policy_parl[hash1]
                     classifier_tmp.append(out)
                 else:
-                    if compile_debug==True: print "++: Adding/compiling: ",policy1
+                    if compile_debug==True: print "++: Adding/compiling: ",policy1   
                     out=policy1.compile()
                     classifier_tmp.append(out)
                     policy_parl[hash1]=out
                     if compile_debug==True: print "++: Adding Rule: ",len(policy_parl),policy1
-
+                 
             if len(self.policies) == 0:  # EMPTY PARALLEL IS A DROP
                 return drop.compile()
             classifiers=classifier_tmp
@@ -845,11 +837,11 @@ class parallel(CombinatorPolicy):
             if len(self.policies) == 0:  # EMPTY PARALLEL IS A DROP
                 return drop.compile()
             classifiers = map(lambda p: p.compile(), self.policies)
-
+        
         out=reduce(lambda acc, c: acc + c, classifiers)
         if compile_debug==True: print "++ final out: ",out
         return out
-
+            
 
 
 class union(parallel,Filter):
@@ -882,17 +874,6 @@ class union(parallel,Filter):
         else:
             raise TypeError
 
-    def to_netkat_json(self, in_pred):
-        if in_pred:
-            ty = "and"
-        else:
-            ty = "or"
-
-        lst = [ pol.to_netkat_json(p, in_pred) for pol in self.policies ]
-        # Hack in constructor ensures that lst is not empty
-        return reduce(lambda p,q: { "type": ty, "lhs": p, "rhs": q }, lst)
-
-
 # TODO: Add other required functionalities to this class -- Arpit
 class disjoint(CombinatorPolicy):
     """
@@ -916,7 +897,7 @@ class disjoint(CombinatorPolicy):
         if len(policies) == 0:
             raise TypeError
         super(disjoint, self).__init__(policies)
-
+    
     def compile(self):
         """
         Produce a Classifier for this policy
@@ -942,15 +923,15 @@ class disjoint(CombinatorPolicy):
                     tmp_rules=disjoint_cache[hash1]
                 else:
                     tmp_rules=policy.compile().rules
-                    disjoint_cache[hash1]=tmp_rules
-
+                    disjoint_cache[hash1]=tmp_rules                    
+                
             else:
                 #print "cache not used"
                 tmp_rules=policy.compile().rules
-
+                                    
             last_rule=[tmp_rules[len(tmp_rules)-1]]
             aggr_rules+=tmp_rules[:len(tmp_rules)-1]
-
+                
             if compile_debug==True: print "time to extract result from cache: ",time.time()-start,len(tmp_rules)
         if compile_debug==False: print "D time to compile upper : ",time.time()-start1
         start1=time.time()
@@ -965,21 +946,21 @@ class disjoint(CombinatorPolicy):
                     disjoint_cache[hash1]=tmp_rules
             else:
                 tmp_rules=policy.compile().rules
-
+            
             last_rule=[tmp_rules[len(tmp_rules)-1]]
             inbound_rules+=tmp_rules[:len(tmp_rules)-1]
-
-        aggr_rules+=inbound_rules
+               
+        aggr_rules+=inbound_rules   
         aggr_rules+=last_rule
         start=time.time()
         #classifiers = Classifier(aggr_rules).optimize()
         classifiers=aggr_rules
         if compile_debug==True: print "time to optimize the results: ",time.time()-start
         if compile_debug==False: print "D time to compile lower : ",time.time()-start1
-
+        
         return classifiers
-
-
+        
+        
 
 class sequential(CombinatorPolicy):
     """
@@ -1010,9 +991,9 @@ class sequential(CombinatorPolicy):
 
     def eval(self, pkt):
         """
-        evaluates to the set union of each policy in
-        self.policies on each packet in the output of the
-        previous.  The first policy in self.policies is
+        evaluates to the set union of each policy in 
+        self.policies on each packet in the output of the 
+        previous.  The first policy in self.policies is 
         evaled on pkt.
 
         :param pkt: the packet on which to be evaluated
@@ -1056,20 +1037,20 @@ class sequential(CombinatorPolicy):
                     classifier_tmp.append(out)
                 else:
                     #print ">> out: ",out
-                    if compile_debug==True: print ">>: Adding/compiling: ",policy1
+                    if compile_debug==True: print ">>: Adding/compiling: ",policy1                                
                     out=policy1.compile()
                     classifier_tmp.append(out)
                     #print "policy dict type: ",type(out),hash1
-                    policy_seq[hash1]=out
+                    policy_seq[hash1]=out               
                     if compile_debug==True: print ">>: Adding rule: ",out
-
+                
             assert(len(self.policies) > 0)
             classifiers=classifier_tmp
-
+            
         else:
             assert(len(self.policies) > 0)
             classifiers = map(lambda p: p.compile(),self.policies)
-
+            
         for c in classifiers:
             assert(c is not None)
         out=reduce(lambda acc, c: acc >> c, classifiers)
@@ -1385,7 +1366,7 @@ def ast_fold(fun, acc, policy):
         return ast_fold(fun,acc,policy.policy)
     else:
         raise NotImplementedError
-
+    
 def add_dynamic_sub_pols(acc, policy):
     if isinstance(policy,DynamicPolicy):
         return acc | {policy}
@@ -1395,7 +1376,7 @@ def add_dynamic_sub_pols(acc, policy):
 def add_query_sub_pols(acc, policy):
     from pyretic.lib.query import packets
     if ( isinstance(policy,Query) or
-         isinstance(policy,packets)) : ### TODO remove this hack once packets is refactored
+         isinstance(policy,packets)) : ### TODO remove this hack once packets is refactored 
         return add | {policy}
     else:
         return acc
@@ -1406,8 +1387,8 @@ def queries_in_eval(acc, policy):
         acc = (res,set())
     elif policy == identity:
         pass
-    elif (isinstance(policy,match) or
-          isinstance(policy,modify) or
+    elif (isinstance(policy,match) or 
+          isinstance(policy,modify) or 
           isinstance(policy,negate)):
         new_pkts = set()
         for pkt in pkts:
@@ -1490,14 +1471,14 @@ def copyClassifier(opt):
             elif action==identity:
                 tmp_actions.append(identity)
             else:
-                tmp_actions.append(copy.copy(action))
+                tmp_actions.append(copy.copy(action))                        
         #print "tmp_actions: ",tmp_actions
         #print "rule_match", rule.match,id(rule.match)
         if rule.match!=identity:
             tmp_rules.append(Rule(copy.copy(rule.match),tmp_actions))
         else:
             tmp_rules.append(Rule(identity,tmp_actions))
-
+    
     tmp=Classifier(tmp_rules)
     return tmp
 
@@ -1510,15 +1491,15 @@ def addClassifiers(c1,c2):
                 # TODO (josh) logic for detecting when sets of actions can't be combined
                 # e.g., [modify(dstip='10.0.0.1'),fwd(1)] + [modify(srcip='10.0.0.2'),fwd(2)]
                 # Arpit: avoided redundant actions
-
+                
                 if r1.actions==r2.actions:
                     #print "Similar action", r1.actions
                     actions=r1.actions
-                else:
+                else:                        
                     actions = r1.actions + r2.actions
                     actions = filter(lambda a: a != drop,actions)
                     if len(actions) == 0:
-                        actions = [drop]
+                        actions = [drop]                     
                     c.rules.append(Rule(intersection, actions))
     for r1 in c1.rules:
         if r1 not in c.rules:
@@ -1536,8 +1517,8 @@ def set_addCache(hdict,opt):
 def get_addCache(hdict):
     tmp=copyClassifier(add_cache[hdict])
     return tmp
-
-
+    
+    
 
 class Classifier(object):
     """
@@ -1577,25 +1558,25 @@ class Classifier(object):
     def __add__(self,c2):
         global count_classifierAdd
         global add_redundancyCounter
-        count_classifierAdd+=1
-        c1 = self
+        count_classifierAdd+=1        
+        c1 = self        
         if c2 is None:
             return None
         hash1=str(c1.__repr__())
         hash2=str(c2.__repr__())
         hdict=str(hash1+", "+hash2)
-        if addCache_optimize==True:
-            if hdict not in add_cache:
+        if addCache_optimize==True:    
+            if hdict not in add_cache:            
                 opt=addClassifiers(c1,c2)
-                set_addCache(hdict,opt)
-            else:
-                add_redundancyCounter+=1
+                set_addCache(hdict,opt)                            
+            else:            
+                add_redundancyCounter+=1            
                 tmp=get_addCache(hdict)
-                opt=tmp
+                opt=tmp                   
         else:
-            opt=addClassifiers(c1,c2)
+            opt=addClassifiers(c1,c2)            
         return opt
-
+       
 
     # Helper function for rshift: given a test b and an action p, return a test
     # b' such that p >> b == b' >> p.
@@ -1649,7 +1630,7 @@ class Classifier(object):
                 new_a1 = modify(**a1.map.copy())
                 if a2 == drop:
                     new_actions.append(drop)
-                elif a2 == Controller or isinstance(a2, CountBucket):
+                elif a2 == Controller or isinstance(a2, CountBucket): 
                     new_actions.append(a2)
                 elif a2 == identity:
                     new_actions.append(new_a1)
@@ -1689,7 +1670,7 @@ class Classifier(object):
             return Classifier([Rule(identity, [drop])])
         else:
             return Classifier(new_rules)
-
+                
     def _sequence_actions_classifier(self, acts, c):
         empty_classifier = Classifier([Rule(identity, [drop])])
         if acts == []:
@@ -1755,138 +1736,3 @@ class Classifier(object):
             if pkts is not None:
                 return pkts
         raise TypeError('Classifier is not total.')
-
-
-
-################################################################################
-# Use NetKAT
-
-def mk_filter(pred):
-  return { "type": "filter", "pred": pred }
-
-def mk_test(hv):
-  return { "type": "test", "header": h["header"], "value": h["value"] }
-
-def mk_mod(h, v):
-  return { "type": "mod", "header": h["header"], "value": h["value"] }
-
-def mk_header(h, v):
-  return { "header": h, "value": v }
-
-def unip(v):
-  return v
-
-def unethaddr(v):
-  return v
-
-def header_val(h, v):
-  if h == "switch":
-    return mk_header("switch", v)
-  elif h == "inport":
-    return mk_header("port", { "type": "physical", "port": v })
-  elif h == "srcmac":
-    return mk_header("ethsrc", unethaddr(v))
-  elif h == "dstmac":
-    return mk_header("ethdst", unethaddr(v))
-  elif h == "vlan_id":
-    return mk_header("vlan", v)
-  elif h == "vlan_pcp":
-    return mk_header("vlanpcp", v)
-  elif h == "ethtype":
-    return mk_header("ethtype", v)
-  elif h == "protocol":
-    return mk_header("inproto", v)
-  elif h == "srcip":
-    return mk_header("ip4src", unip(v))
-  elif h == "dstip":
-    return mk_header("ip4dst", unip(v))
-  elif h == "srcport":
-    return mk_header("tcpsrcport", v)
-  elif h == "tcpdstport":
-    return mk_header("tcpdstport", v)
-  else:
-    raise TypeError("bad header")
-
-def match_to_pred(m):
-  lst = [mk_test(header_val(h, m[h])) for h in m]
-  return lst[1:].reduce(lst[0], mk_and)
-
-
-def to_pred(p):
-  if isinstance(p, match):
-    return match_to_pred(match.map)
-  elif isinstance(p, identity):
-    return { "type": "true" }
-  elif isinstance(p, drop):
-    return { "type": "false" }
-  elif isinstance(p, negate):
-    # Only policies[0] is used in Pyretic
-    return { "type": "neg", "pred": to_pred(p.policies[0]) }
-  elif isinstance(p, union):
-    return p.policies[1:].reduce(p.policies[0], mk_or)
-  elif isstance(p, intersection):
-    return p.policies[1:].reduce(p.policies[0], mk_and)
-
-# TODO(arjun): Consider using aspects to inject methods into each class. That
-# would be better object-oriented style.
-def to_pol(p):
-  if isinstance(p, match):
-    return mk_filter(match_to_pred(p.map))
-  elif isinstance(p, identity):
-    return mk_filter({ "type": "true" })
-  elif isinstance(p, drop):
-    return mk_filter({ "type": "false" })
-  elif isinstance(p, modify):
-    lst = [ mk_mod(h, p.map[h]) for h in p.map ]
-    return lst[1:].reduce(lst[0], mk_seq)
-  elif isinstance(p, negate):
-    return mk_filter(to_pred(p))
-  elif isinstance(p, parallel):
-    return p.policies[1:].reduce(p.policies[0], mk_union)
-  elif isinstance(p, union):
-    return mk_filter(to_pred(p))
-  elif isinstance(p, disjoint):
-    return p.policies[1:].reduce(p.policies[0], mk_disjoint)
-  elif isinstance(p, sequential):
-    return p.policies[1:].reduce(p.policies[0], mk_seq)
-  elif isinstance(p, intersection):
-    return mk_filter(to_pred(p))
-  elif isinstance(p, fwd):
-    return mk_mod("outport", p.outport)
-
-def mk_union(p, q):
-  return { "type": "union", "lhs": p, "rhs": q }
-
-def mk_disjoint(p, q):
-  return { "type": "disjoint", "lhs": p, "rhs": q }
-
-def mk_seq(p, q):
-  return { "type": "seq", "lhs": p, "rhs": q }
-
-def mk_and(p, q):
-  return { "type": "and", "lhs": p, "rhs": q }
-
-def mk_or(p, q):
-  return { "type": "or", "lhs": p, "rhs": q }
-
-# http://stackoverflow.com/questions/3862310/
-# No duplicates if no diamonds. Does Python allow diamonds? Does Pyretic
-# use diamonds if it does?
-def all_subclasses(cls):
-  return cls.__subclasses__() + [g for s in cls.__subclasses__()
-                                 for g in all_subclasses(s)]
-
-def compile_to_netkat(self):
-  print "Using NetKAT"
-  # to_pol(self)
-  print "Converted"
-  return []
-
-def use_netkat_permanently():
-  print "Switching to NetKAT"
-  lst = [Policy] + all_subclasses(Policy)
-  for class_ in lst:
-    class_.original_compile = class_.compile
-    class_.compile = compile_to_netkat
-
-use_netkat_permanently()
